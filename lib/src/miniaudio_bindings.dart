@@ -21,6 +21,7 @@ class MiniAudioBindings {
           lookup)
       : _lookup = lookup;
 
+  /// Retrieves the version of miniaudio as separated integers. Each component can be NULL if it's not required.
   void ma_version(
     ffi.Pointer<ma_uint32> pMajor,
     ffi.Pointer<ma_uint32> pMinor,
@@ -41,6 +42,7 @@ class MiniAudioBindings {
       void Function(ffi.Pointer<ma_uint32>, ffi.Pointer<ma_uint32>,
           ffi.Pointer<ma_uint32>)>();
 
+  /// Retrieves the version of miniaudio as a string which can be useful for logging purposes.
   ffi.Pointer<ffi.Char> ma_version_string() {
     return _ma_version_string();
   }
@@ -4355,6 +4357,7 @@ class MiniAudioBindings {
           int Function(ffi.Pointer<ma_resampler_config>, ffi.Pointer<ffi.Void>,
               ffi.Pointer<ma_resampler>)>();
 
+  /// Initializes a new resampler object from a config.
   int ma_resampler_init(
     ffi.Pointer<ma_resampler_config> pConfig,
     ffi.Pointer<ma_allocation_callbacks> pAllocationCallbacks,
@@ -4377,6 +4380,7 @@ class MiniAudioBindings {
       int Function(ffi.Pointer<ma_resampler_config>,
           ffi.Pointer<ma_allocation_callbacks>, ffi.Pointer<ma_resampler>)>();
 
+  /// Uninitializes a resampler.
   void ma_resampler_uninit(
     ffi.Pointer<ma_resampler> pResampler,
     ffi.Pointer<ma_allocation_callbacks> pAllocationCallbacks,
@@ -4395,6 +4399,26 @@ class MiniAudioBindings {
       void Function(
           ffi.Pointer<ma_resampler>, ffi.Pointer<ma_allocation_callbacks>)>();
 
+  /// Converts the given input data.
+  ///
+  /// Both the input and output frames must be in the format specified in the config when the resampler was initilized.
+  ///
+  /// On input, [pFrameCountOut] contains the number of output frames to process. On output it contains the number of output frames that
+  /// were actually processed, which may be less than the requested amount which will happen if there's not enough input data. You can use
+  /// ma_resampler_get_expected_output_frame_count() to know how many output frames will be processed for a given number of input frames.
+  ///
+  /// On input, [pFrameCountIn] contains the number of input frames contained in [pFramesIn]. On output it contains the number of whole
+  /// input frames that were actually processed. You can use ma_resampler_get_required_input_frame_count() to know how many input frames
+  /// you should provide for a given number of output frames. [pFramesIn] can be NULL, in which case zeroes will be used instead.
+  ///
+  /// If [pFramesOut] is NULL, a seek is performed. In this case, if [pFrameCountOut] is not NULL it will seek by the specified number of
+  /// output frames. Otherwise, if [pFramesCountOut] is NULL and [pFrameCountIn] is not NULL, it will seek by the specified number of input
+  /// frames. When seeking, [pFramesIn] is allowed to NULL, in which case the internal timing state will be updated, but no input will be
+  /// processed. In this case, any internal filter state will be updated as if zeroes were passed in.
+  ///
+  /// It is an error for [pFramesOut] to be non-NULL and [pFrameCountOut] to be NULL.
+  ///
+  /// It is an error for both [pFrameCountOut] and [pFrameCountIn] to be NULL.
   int ma_resampler_process_pcm_frames(
     ffi.Pointer<ma_resampler> pResampler,
     ffi.Pointer<ffi.Void> pFramesIn,
@@ -4428,6 +4452,7 @@ class MiniAudioBindings {
               ffi.Pointer<ffi.Void>,
               ffi.Pointer<ma_uint64>)>();
 
+  /// Sets the input and output sample rate.
   int ma_resampler_set_rate(
     ffi.Pointer<ma_resampler> pResampler,
     int sampleRateIn,
@@ -4447,6 +4472,9 @@ class MiniAudioBindings {
   late final _ma_resampler_set_rate = _ma_resampler_set_ratePtr
       .asFunction<int Function(ffi.Pointer<ma_resampler>, int, int)>();
 
+  /// Sets the input and output sample rate as a ratio.
+  ///
+  /// The ration is in/out.
   int ma_resampler_set_rate_ratio(
     ffi.Pointer<ma_resampler> pResampler,
     double ratio,
@@ -4464,6 +4492,7 @@ class MiniAudioBindings {
   late final _ma_resampler_set_rate_ratio = _ma_resampler_set_rate_ratioPtr
       .asFunction<int Function(ffi.Pointer<ma_resampler>, double)>();
 
+  /// Retrieves the latency introduced by the resampler in input frames.
   int ma_resampler_get_input_latency(
     ffi.Pointer<ma_resampler> pResampler,
   ) {
@@ -4479,6 +4508,7 @@ class MiniAudioBindings {
       _ma_resampler_get_input_latencyPtr
           .asFunction<int Function(ffi.Pointer<ma_resampler>)>();
 
+  /// Retrieves the latency introduced by the resampler in output frames.
   int ma_resampler_get_output_latency(
     ffi.Pointer<ma_resampler> pResampler,
   ) {
@@ -4494,6 +4524,11 @@ class MiniAudioBindings {
       _ma_resampler_get_output_latencyPtr
           .asFunction<int Function(ffi.Pointer<ma_resampler>)>();
 
+  /// Calculates the number of whole input frames that would need to be read from the client in order to output the specified
+  /// number of output frames.
+  ///
+  /// The returned value does not include cached input frames. It only returns the number of extra frames that would need to be
+  /// read from the input buffer in order to output the specified number of output frames.
   int ma_resampler_get_required_input_frame_count(
     ffi.Pointer<ma_resampler> pResampler,
     int outputFrameCount,
@@ -4516,6 +4551,8 @@ class MiniAudioBindings {
           int Function(
               ffi.Pointer<ma_resampler>, int, ffi.Pointer<ma_uint64>)>();
 
+  /// Calculates the number of whole output frames that would be output after fully reading and consuming the specified number of
+  /// input frames.
   int ma_resampler_get_expected_output_frame_count(
     ffi.Pointer<ma_resampler> pResampler,
     int inputFrameCount,
@@ -4538,6 +4575,7 @@ class MiniAudioBindings {
           int Function(
               ffi.Pointer<ma_resampler>, int, ffi.Pointer<ma_uint64>)>();
 
+  /// Resets the resampler's timer and clears it's internal cache.
   int ma_resampler_reset(
     ffi.Pointer<ma_resampler> pResampler,
   ) {
@@ -5563,6 +5601,7 @@ class MiniAudioBindings {
           void Function(ffi.Pointer<ffi.Void>, int, ffi.Pointer<ffi.Void>, int,
               int, int, int)>();
 
+  /// Deinterleaves an interleaved buffer.
   void ma_deinterleave_pcm_frames(
     int format,
     int channels,
@@ -5589,6 +5628,7 @@ class MiniAudioBindings {
           void Function(int, int, int, ffi.Pointer<ffi.Void>,
               ffi.Pointer<ffi.Pointer<ffi.Void>>)>();
 
+  /// Interleaves a group of deinterleaved buffers.
   void ma_interleave_pcm_frames(
     int format,
     int channels,
@@ -5618,6 +5658,9 @@ class MiniAudioBindings {
           void Function(int, int, int, ffi.Pointer<ffi.Pointer<ffi.Void>>,
               ffi.Pointer<ffi.Void>)>();
 
+  /// Retrieves the channel position of the specified channel in the given channel map.
+  ///
+  /// The pChannelMap parameter can be null, in which case miniaudio's default channel map will be assumed.
   int ma_channel_map_get_channel(
     ffi.Pointer<ma_channel> pChannelMap,
     int channelCount,
@@ -5637,6 +5680,9 @@ class MiniAudioBindings {
   late final _ma_channel_map_get_channel = _ma_channel_map_get_channelPtr
       .asFunction<int Function(ffi.Pointer<ma_channel>, int, int)>();
 
+  /// Initializes a blank channel map.
+  ///
+  /// When a blank channel map is specified anywhere it indicates that the native channel map should be used.
   void ma_channel_map_init_blank(
     ffi.Pointer<ma_channel> pChannelMap,
     int channels,
@@ -5654,6 +5700,9 @@ class MiniAudioBindings {
   late final _ma_channel_map_init_blank = _ma_channel_map_init_blankPtr
       .asFunction<void Function(ffi.Pointer<ma_channel>, int)>();
 
+  /// Helper for retrieving a standard channel map.
+  ///
+  /// The output channel map buffer must have a capacity of at least `channelMapCap`.
   void ma_channel_map_init_standard(
     int standardChannelMap,
     ffi.Pointer<ma_channel> pChannelMap,
@@ -5675,6 +5724,9 @@ class MiniAudioBindings {
   late final _ma_channel_map_init_standard = _ma_channel_map_init_standardPtr
       .asFunction<void Function(int, ffi.Pointer<ma_channel>, int, int)>();
 
+  /// Copies a channel map.
+  ///
+  /// Both input and output channel map buffers must have a capacity of at at least `channels`.
   void ma_channel_map_copy(
     ffi.Pointer<ma_channel> pOut,
     ffi.Pointer<ma_channel> pIn,
@@ -5694,6 +5746,9 @@ class MiniAudioBindings {
   late final _ma_channel_map_copy = _ma_channel_map_copyPtr.asFunction<
       void Function(ffi.Pointer<ma_channel>, ffi.Pointer<ma_channel>, int)>();
 
+  /// Copies a channel map if one is specified, otherwise copies the default channel map.
+  ///
+  /// The output buffer must have a capacity of at least `channels`. If not NULL, the input channel map must also have a capacity of at least `channels`.
   void ma_channel_map_copy_or_default(
     ffi.Pointer<ma_channel> pOut,
     int channelMapCapOut,
@@ -5720,6 +5775,16 @@ class MiniAudioBindings {
           void Function(
               ffi.Pointer<ma_channel>, int, ffi.Pointer<ma_channel>, int)>();
 
+  /// Determines whether or not a channel map is valid.
+  ///
+  /// A blank channel map is valid (all channels set to MA_CHANNEL_NONE). The way a blank channel map is handled is context specific, but
+  /// is usually treated as a passthrough.
+  ///
+  /// Invalid channel maps:
+  /// - A channel map with no channels
+  /// - A channel map with more than one channel and a mono channel
+  ///
+  /// The channel map buffer must have a capacity of at least `channels`.
   int ma_channel_map_is_valid(
     ffi.Pointer<ma_channel> pChannelMap,
     int channels,
@@ -5737,6 +5802,11 @@ class MiniAudioBindings {
   late final _ma_channel_map_is_valid = _ma_channel_map_is_validPtr
       .asFunction<int Function(ffi.Pointer<ma_channel>, int)>();
 
+  /// Helper for comparing two channel maps for equality.
+  ///
+  /// This assumes the channel count is the same between the two.
+  ///
+  /// Both channels map buffers must have a capacity of at least `channels`.
   int ma_channel_map_is_equal(
     ffi.Pointer<ma_channel> pChannelMapA,
     ffi.Pointer<ma_channel> pChannelMapB,
@@ -5756,6 +5826,9 @@ class MiniAudioBindings {
   late final _ma_channel_map_is_equal = _ma_channel_map_is_equalPtr.asFunction<
       int Function(ffi.Pointer<ma_channel>, ffi.Pointer<ma_channel>, int)>();
 
+  /// Helper for determining if a channel map is blank (all channels set to MA_CHANNEL_NONE).
+  ///
+  /// The channel map buffer must have a capacity of at least `channels`.
   int ma_channel_map_is_blank(
     ffi.Pointer<ma_channel> pChannelMap,
     int channels,
@@ -5773,6 +5846,9 @@ class MiniAudioBindings {
   late final _ma_channel_map_is_blank = _ma_channel_map_is_blankPtr
       .asFunction<int Function(ffi.Pointer<ma_channel>, int)>();
 
+  /// Helper for determining whether or not a channel is present in the given channel map.
+  ///
+  /// The channel map buffer must have a capacity of at least `channels`.
   int ma_channel_map_contains_channel_position(
     int channels,
     ffi.Pointer<ma_channel> pChannelMap,
@@ -5793,6 +5869,10 @@ class MiniAudioBindings {
       _ma_channel_map_contains_channel_positionPtr
           .asFunction<int Function(int, ffi.Pointer<ma_channel>, int)>();
 
+  /// Find a channel position in the given channel map. Returns MA_TRUE if the channel is found; MA_FALSE otherwise. The
+  /// index of the channel is output to `pChannelIndex`.
+  ///
+  /// The channel map buffer must have a capacity of at least `channels`.
   int ma_channel_map_find_channel_position(
     int channels,
     ffi.Pointer<ma_channel> pChannelMap,
@@ -5816,6 +5896,11 @@ class MiniAudioBindings {
           int Function(
               int, ffi.Pointer<ma_channel>, int, ffi.Pointer<ma_uint32>)>();
 
+  /// Generates a string representing the given channel map.
+  ///
+  /// This is for printing and debugging purposes, not serialization/deserialization.
+  ///
+  /// Returns the length of the string, not including the null terminator.
   int ma_channel_map_to_string(
     ffi.Pointer<ma_channel> pChannelMap,
     int channels,
@@ -5839,6 +5924,7 @@ class MiniAudioBindings {
           int Function(
               ffi.Pointer<ma_channel>, int, ffi.Pointer<ffi.Char>, int)>();
 
+  /// Retrieves a human readable version of a channel position.
   ffi.Pointer<ffi.Char> ma_channel_position_to_string(
     int channel,
   ) {
@@ -5853,7 +5939,13 @@ class MiniAudioBindings {
   late final _ma_channel_position_to_string = _ma_channel_position_to_stringPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
-  /// Conversion Helpers
+  /// High-level helper for doing a full format conversion in one go. Returns the number of output frames. Call this with pOut set to NULL to
+  /// determine the required size of the output buffer. frameCountOut should be set to the capacity of pOut. If pOut is NULL, frameCountOut is
+  /// ignored.
+  ///
+  /// A return value of 0 indicates an error.
+  ///
+  /// This function is useful for one-off bulk conversions, but if you're streaming data you should use the ma_data_converter APIs instead.
   int ma_convert_frames(
     ffi.Pointer<ffi.Void> pOut,
     int frameCountOut,
@@ -7911,6 +8003,10 @@ class MiniAudioBindings {
       .asFunction<int Function(ffi.Pointer<ma_duplex_rb>)>();
 
   /// Miscellaneous Helpers
+  ///
+  /// /
+  /// /*
+  /// Retrieves a human readable description of the given result code.
   ffi.Pointer<ffi.Char> ma_result_description(
     int result,
   ) {
@@ -7925,6 +8021,7 @@ class MiniAudioBindings {
   late final _ma_result_description = _ma_result_descriptionPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
+  /// malloc()
   ffi.Pointer<ffi.Void> ma_malloc(
     int sz,
     ffi.Pointer<ma_allocation_callbacks> pAllocationCallbacks,
@@ -7943,6 +8040,7 @@ class MiniAudioBindings {
       ffi.Pointer<ffi.Void> Function(
           int, ffi.Pointer<ma_allocation_callbacks>)>();
 
+  /// calloc()
   ffi.Pointer<ffi.Void> ma_calloc(
     int sz,
     ffi.Pointer<ma_allocation_callbacks> pAllocationCallbacks,
@@ -7961,6 +8059,7 @@ class MiniAudioBindings {
       ffi.Pointer<ffi.Void> Function(
           int, ffi.Pointer<ma_allocation_callbacks>)>();
 
+  /// realloc()
   ffi.Pointer<ffi.Void> ma_realloc(
     ffi.Pointer<ffi.Void> p,
     int sz,
@@ -7981,6 +8080,7 @@ class MiniAudioBindings {
       ffi.Pointer<ffi.Void> Function(
           ffi.Pointer<ffi.Void>, int, ffi.Pointer<ma_allocation_callbacks>)>();
 
+  /// free()
   void ma_free(
     ffi.Pointer<ffi.Void> p,
     ffi.Pointer<ma_allocation_callbacks> pAllocationCallbacks,
@@ -7999,6 +8099,7 @@ class MiniAudioBindings {
       void Function(
           ffi.Pointer<ffi.Void>, ffi.Pointer<ma_allocation_callbacks>)>();
 
+  /// Performs an aligned malloc, with the assumption that the alignment is a power of 2.
   ffi.Pointer<ffi.Void> ma_aligned_malloc(
     int sz,
     int alignment,
@@ -8019,6 +8120,7 @@ class MiniAudioBindings {
       ffi.Pointer<ffi.Void> Function(
           int, int, ffi.Pointer<ma_allocation_callbacks>)>();
 
+  /// Free's an aligned malloc'd buffer.
   void ma_aligned_free(
     ffi.Pointer<ffi.Void> p,
     ffi.Pointer<ma_allocation_callbacks> pAllocationCallbacks,
@@ -8037,6 +8139,7 @@ class MiniAudioBindings {
       void Function(
           ffi.Pointer<ffi.Void>, ffi.Pointer<ma_allocation_callbacks>)>();
 
+  /// Retrieves a friendly name for a format.
   ffi.Pointer<ffi.Char> ma_get_format_name(
     int format,
   ) {
@@ -8051,6 +8154,7 @@ class MiniAudioBindings {
   late final _ma_get_format_name =
       _ma_get_format_namePtr.asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
+  /// Blends two frames in floating point format.
   void ma_blend_f32(
     ffi.Pointer<ffi.Float> pOut,
     ffi.Pointer<ffi.Float> pInA,
@@ -8075,6 +8179,12 @@ class MiniAudioBindings {
       void Function(ffi.Pointer<ffi.Float>, ffi.Pointer<ffi.Float>,
           ffi.Pointer<ffi.Float>, double, int)>();
 
+  /// Retrieves the size of a sample in bytes for the given format.
+  ///
+  /// This API is efficient and is implemented using a lookup table.
+  ///
+  /// Thread Safety: SAFE
+  /// This API is pure.
   int ma_get_bytes_per_sample(
     int format,
   ) {
@@ -8089,6 +8199,7 @@ class MiniAudioBindings {
   late final _ma_get_bytes_per_sample =
       _ma_get_bytes_per_samplePtr.asFunction<int Function(int)>();
 
+  /// Converts a log level to a string.
   ffi.Pointer<ffi.Char> ma_log_level_to_string(
     int logLevel,
   ) {
@@ -8104,6 +8215,10 @@ class MiniAudioBindings {
       .asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   /// Synchronization
+  ///
+  /// /
+  /// /*
+  /// Locks a spinlock.
   int ma_spinlock_lock(
     ffi.Pointer<ma_spinlock> pSpinlock,
   ) {
@@ -8118,6 +8233,7 @@ class MiniAudioBindings {
   late final _ma_spinlock_lock =
       _ma_spinlock_lockPtr.asFunction<int Function(ffi.Pointer<ma_spinlock>)>();
 
+  /// Locks a spinlock, but does not yield() when looping.
   int ma_spinlock_lock_noyield(
     ffi.Pointer<ma_spinlock> pSpinlock,
   ) {
@@ -8132,6 +8248,7 @@ class MiniAudioBindings {
   late final _ma_spinlock_lock_noyield = _ma_spinlock_lock_noyieldPtr
       .asFunction<int Function(ffi.Pointer<ma_spinlock>)>();
 
+  /// Unlocks a spinlock.
   int ma_spinlock_unlock(
     ffi.Pointer<ma_spinlock> pSpinlock,
   ) {
@@ -8146,6 +8263,9 @@ class MiniAudioBindings {
   late final _ma_spinlock_unlock = _ma_spinlock_unlockPtr
       .asFunction<int Function(ffi.Pointer<ma_spinlock>)>();
 
+  /// Creates a mutex.
+  ///
+  /// A mutex must be created from a valid context. A mutex is initially unlocked.
   int ma_mutex_init(
     ffi.Pointer<ma_mutex> pMutex,
   ) {
@@ -8160,6 +8280,7 @@ class MiniAudioBindings {
   late final _ma_mutex_init =
       _ma_mutex_initPtr.asFunction<int Function(ffi.Pointer<ma_mutex>)>();
 
+  /// Deletes a mutex.
   void ma_mutex_uninit(
     ffi.Pointer<ma_mutex> pMutex,
   ) {
@@ -8174,6 +8295,7 @@ class MiniAudioBindings {
   late final _ma_mutex_uninit =
       _ma_mutex_uninitPtr.asFunction<void Function(ffi.Pointer<ma_mutex>)>();
 
+  /// Locks a mutex with an infinite timeout.
   void ma_mutex_lock(
     ffi.Pointer<ma_mutex> pMutex,
   ) {
@@ -8188,6 +8310,7 @@ class MiniAudioBindings {
   late final _ma_mutex_lock =
       _ma_mutex_lockPtr.asFunction<void Function(ffi.Pointer<ma_mutex>)>();
 
+  /// Unlocks a mutex.
   void ma_mutex_unlock(
     ffi.Pointer<ma_mutex> pMutex,
   ) {
@@ -8202,6 +8325,7 @@ class MiniAudioBindings {
   late final _ma_mutex_unlock =
       _ma_mutex_unlockPtr.asFunction<void Function(ffi.Pointer<ma_mutex>)>();
 
+  /// Initializes an auto-reset event.
   int ma_event_init(
     ffi.Pointer<ma_event> pEvent,
   ) {
@@ -8216,6 +8340,7 @@ class MiniAudioBindings {
   late final _ma_event_init =
       _ma_event_initPtr.asFunction<int Function(ffi.Pointer<ma_event>)>();
 
+  /// Uninitializes an auto-reset event.
   void ma_event_uninit(
     ffi.Pointer<ma_event> pEvent,
   ) {
@@ -8230,6 +8355,7 @@ class MiniAudioBindings {
   late final _ma_event_uninit =
       _ma_event_uninitPtr.asFunction<void Function(ffi.Pointer<ma_event>)>();
 
+  /// Waits for the specified auto-reset event to become signalled.
   int ma_event_wait(
     ffi.Pointer<ma_event> pEvent,
   ) {
@@ -8244,6 +8370,7 @@ class MiniAudioBindings {
   late final _ma_event_wait =
       _ma_event_waitPtr.asFunction<int Function(ffi.Pointer<ma_event>)>();
 
+  /// Signals the specified auto-reset event.
   int ma_event_signal(
     ffi.Pointer<ma_event> pEvent,
   ) {
@@ -8825,6 +8952,25 @@ class MiniAudioBindings {
           int Function(
               ffi.Pointer<ma_device_job_thread>, ffi.Pointer<ma_job>)>();
 
+  /// Initializes a `ma_context_config` object.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// A `ma_context_config` initialized to defaults.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// You must always use this to initialize the default state of the `ma_context_config` object. Not using this will result in your program breaking when miniaudio
+  /// is updated and new members are added to `ma_context_config`. It also sets logical defaults.
+  ///
+  /// You can override members of the returned object by changing it's members directly.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_context_init()
   ma_context_config ma_context_config_init() {
     return _ma_context_config_init();
   }
@@ -8835,6 +8981,214 @@ class MiniAudioBindings {
   late final _ma_context_config_init =
       _ma_context_config_initPtr.asFunction<ma_context_config Function()>();
 
+  /// Initializes a context.
+  ///
+  /// The context is used for selecting and initializing an appropriate backend and to represent the backend at a more global level than that of an individual
+  /// device. There is one context to many devices, and a device is created from a context. A context is required to enumerate devices.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// backends (in, optional)
+  /// A list of backends to try initializing, in priority order. Can be NULL, in which case it uses default priority order.
+  ///
+  /// backendCount (in, optional)
+  /// The number of items in `backend`. Ignored if `backend` is NULL.
+  ///
+  /// pConfig (in, optional)
+  /// The context configuration.
+  ///
+  /// pContext (in)
+  /// A pointer to the context object being initialized.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Unsafe. Do not call this function across multiple threads as some backends read and write to global state.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// When `backends` is NULL, the default priority order will be used. Below is a list of backends in priority order:
+  ///
+  /// |-------------|-----------------------|--------------------------------------------------------|
+  /// | Name        | Enum Name             | Supported Operating Systems                            |
+  /// |-------------|-----------------------|--------------------------------------------------------|
+  /// | WASAPI      | ma_backend_wasapi     | Windows Vista+                                         |
+  /// | DirectSound | ma_backend_dsound     | Windows XP+                                            |
+  /// | WinMM       | ma_backend_winmm      | Windows XP+ (may work on older versions, but untested) |
+  /// | Core Audio  | ma_backend_coreaudio  | macOS, iOS                                             |
+  /// | ALSA        | ma_backend_alsa       | Linux                                                  |
+  /// | PulseAudio  | ma_backend_pulseaudio | Cross Platform (disabled on Windows, BSD and Android)  |
+  /// | JACK        | ma_backend_jack       | Cross Platform (disabled on BSD and Android)           |
+  /// | sndio       | ma_backend_sndio      | OpenBSD                                                |
+  /// | audio(4)    | ma_backend_audio4     | NetBSD, OpenBSD                                        |
+  /// | OSS         | ma_backend_oss        | FreeBSD                                                |
+  /// | AAudio      | ma_backend_aaudio     | Android 8+                                             |
+  /// | OpenSL|ES   | ma_backend_opensl     | Android (API level 16+)                                |
+  /// | Web Audio   | ma_backend_webaudio   | Web (via Emscripten)                                   |
+  /// | Null        | ma_backend_null       | Cross Platform (not used on Web)                       |
+  /// |-------------|-----------------------|--------------------------------------------------------|
+  ///
+  /// The context can be configured via the `pConfig` argument. The config object is initialized with `ma_context_config_init()`. Individual configuration settings
+  /// can then be set directly on the structure. Below are the members of the `ma_context_config` object.
+  ///
+  /// pLog
+  /// A pointer to the `ma_log` to post log messages to. Can be NULL if the application does not
+  /// require logging. See the `ma_log` API for details on how to use the logging system.
+  ///
+  /// threadPriority
+  /// The desired priority to use for the audio thread. Allowable values include the following:
+  ///
+  /// |--------------------------------------|
+  /// | Thread Priority                      |
+  /// |--------------------------------------|
+  /// | ma_thread_priority_idle              |
+  /// | ma_thread_priority_lowest            |
+  /// | ma_thread_priority_low               |
+  /// | ma_thread_priority_normal            |
+  /// | ma_thread_priority_high              |
+  /// | ma_thread_priority_highest (default) |
+  /// | ma_thread_priority_realtime          |
+  /// | ma_thread_priority_default           |
+  /// |--------------------------------------|
+  ///
+  /// threadStackSize
+  /// The desired size of the stack for the audio thread. Defaults to the operating system's default.
+  ///
+  /// pUserData
+  /// A pointer to application-defined data. This can be accessed from the context object directly such as `context.pUserData`.
+  ///
+  /// allocationCallbacks
+  /// Structure containing custom allocation callbacks. Leaving this at defaults will cause it to use MA_MALLOC, MA_REALLOC and MA_FREE. These allocation
+  /// callbacks will be used for anything tied to the context, including devices.
+  ///
+  /// alsa.useVerboseDeviceEnumeration
+  /// ALSA will typically enumerate many different devices which can be intrusive and not user-friendly. To combat this, miniaudio will enumerate only unique
+  /// card/device pairs by default. The problem with this is that you lose a bit of flexibility and control. Setting alsa.useVerboseDeviceEnumeration makes
+  /// it so the ALSA backend includes all devices. Defaults to false.
+  ///
+  /// pulse.pApplicationName
+  /// PulseAudio only. The application name to use when initializing the PulseAudio context with `pa_context_new()`.
+  ///
+  /// pulse.pServerName
+  /// PulseAudio only. The name of the server to connect to with `pa_context_connect()`.
+  ///
+  /// pulse.tryAutoSpawn
+  /// PulseAudio only. Whether or not to try automatically starting the PulseAudio daemon. Defaults to false. If you set this to true, keep in mind that
+  /// miniaudio uses a trial and error method to find the most appropriate backend, and this will result in the PulseAudio daemon starting which may be
+  /// intrusive for the end user.
+  ///
+  /// coreaudio.sessionCategory
+  /// iOS only. The session category to use for the shared AudioSession instance. Below is a list of allowable values and their Core Audio equivalents.
+  ///
+  /// |-----------------------------------------|-------------------------------------|
+  /// | miniaudio Token                         | Core Audio Token                    |
+  /// |-----------------------------------------|-------------------------------------|
+  /// | ma_ios_session_category_ambient         | AVAudioSessionCategoryAmbient       |
+  /// | ma_ios_session_category_solo_ambient    | AVAudioSessionCategorySoloAmbient   |
+  /// | ma_ios_session_category_playback        | AVAudioSessionCategoryPlayback      |
+  /// | ma_ios_session_category_record          | AVAudioSessionCategoryRecord        |
+  /// | ma_ios_session_category_play_and_record | AVAudioSessionCategoryPlayAndRecord |
+  /// | ma_ios_session_category_multi_route     | AVAudioSessionCategoryMultiRoute    |
+  /// | ma_ios_session_category_none            | AVAudioSessionCategoryAmbient       |
+  /// | ma_ios_session_category_default         | AVAudioSessionCategoryAmbient       |
+  /// |-----------------------------------------|-------------------------------------|
+  ///
+  /// coreaudio.sessionCategoryOptions
+  /// iOS only. Session category options to use with the shared AudioSession instance. Below is a list of allowable values and their Core Audio equivalents.
+  ///
+  /// |---------------------------------------------------------------------------|------------------------------------------------------------------|
+  /// | miniaudio Token                                                           | Core Audio Token                                                 |
+  /// |---------------------------------------------------------------------------|------------------------------------------------------------------|
+  /// | ma_ios_session_category_option_mix_with_others                            | AVAudioSessionCategoryOptionMixWithOthers                        |
+  /// | ma_ios_session_category_option_duck_others                                | AVAudioSessionCategoryOptionDuckOthers                           |
+  /// | ma_ios_session_category_option_allow_bluetooth                            | AVAudioSessionCategoryOptionAllowBluetooth                       |
+  /// | ma_ios_session_category_option_default_to_speaker                         | AVAudioSessionCategoryOptionDefaultToSpeaker                     |
+  /// | ma_ios_session_category_option_interrupt_spoken_audio_and_mix_with_others | AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers |
+  /// | ma_ios_session_category_option_allow_bluetooth_a2dp                       | AVAudioSessionCategoryOptionAllowBluetoothA2DP                   |
+  /// | ma_ios_session_category_option_allow_air_play                             | AVAudioSessionCategoryOptionAllowAirPlay                         |
+  /// |---------------------------------------------------------------------------|------------------------------------------------------------------|
+  ///
+  /// coreaudio.noAudioSessionActivate
+  /// iOS only. When set to true, does not perform an explicit [[AVAudioSession sharedInstace] setActive:true] on initialization.
+  ///
+  /// coreaudio.noAudioSessionDeactivate
+  /// iOS only. When set to true, does not perform an explicit [[AVAudioSession sharedInstace] setActive:false] on uninitialization.
+  ///
+  /// jack.pClientName
+  /// The name of the client to pass to `jack_client_open()`.
+  ///
+  /// jack.tryStartServer
+  /// Whether or not to try auto-starting the JACK server. Defaults to false.
+  ///
+  ///
+  /// It is recommended that only a single context is active at any given time because it's a bulky data structure which performs run-time linking for the
+  /// relevant backends every time it's initialized.
+  ///
+  /// The location of the context cannot change throughout it's lifetime. Consider allocating the `ma_context` object with `malloc()` if this is an issue. The
+  /// reason for this is that a pointer to the context is stored in the `ma_device` structure.
+  ///
+  ///
+  /// Example 1 - Default Initialization
+  /// ----------------------------------
+  /// The example below shows how to initialize the context using the default configuration.
+  ///
+  /// ```c
+  /// ma_context context;
+  /// ma_result result = ma_context_init(NULL, 0, NULL, &context);
+  /// if (result != MA_SUCCESS) {
+  /// // Error.
+  /// }
+  /// ```
+  ///
+  ///
+  /// Example 2 - Custom Configuration
+  /// --------------------------------
+  /// The example below shows how to initialize the context using custom backend priorities and a custom configuration. In this hypothetical example, the program
+  /// wants to prioritize ALSA over PulseAudio on Linux. They also want to avoid using the WinMM backend on Windows because it's latency is too high. They also
+  /// want an error to be returned if no valid backend is available which they achieve by excluding the Null backend.
+  ///
+  /// For the configuration, the program wants to capture any log messages so they can, for example, route it to a log file and user interface.
+  ///
+  /// ```c
+  /// ma_backend backends[] = {
+  /// ma_backend_alsa,
+  /// ma_backend_pulseaudio,
+  /// ma_backend_wasapi,
+  /// ma_backend_dsound
+  /// };
+  ///
+  /// ma_log log;
+  /// ma_log_init(&log);
+  /// ma_log_register_callback(&log, ma_log_callback_init(my_log_callbac, pMyLogUserData));
+  ///
+  /// ma_context_config config = ma_context_config_init();
+  /// config.pLog = &log; // Specify a custom log object in the config so any logs that are posted from ma_context_init() are captured.
+  ///
+  /// ma_context context;
+  /// ma_result result = ma_context_init(backends, sizeof(backends)/sizeof(backends[0]), &config, &context);
+  /// if (result != MA_SUCCESS) {
+  /// // Error.
+  /// if (result == MA_NO_BACKEND) {
+  /// // Couldn't find an appropriate backend.
+  /// }
+  /// }
+  ///
+  /// // You could also attach a log callback post-initialization:
+  /// ma_log_register_callback(ma_context_get_log(&context), ma_log_callback_init(my_log_callback, pMyLogUserData));
+  /// ```
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_context_config_init()
+  /// ma_context_uninit()
   int ma_context_init(
     ffi.Pointer<ffi.Int32> backends,
     int backendCount,
@@ -8860,6 +9214,27 @@ class MiniAudioBindings {
       int Function(ffi.Pointer<ffi.Int32>, int, ffi.Pointer<ma_context_config>,
           ffi.Pointer<ma_context>)>();
 
+  /// Uninitializes a context.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Unsafe. Do not call this function across multiple threads as some backends read and write to global state.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// Results are undefined if you call this while any device created by this context is still active.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_context_init()
   int ma_context_uninit(
     ffi.Pointer<ma_context> pContext,
   ) {
@@ -8874,6 +9249,9 @@ class MiniAudioBindings {
   late final _ma_context_uninit =
       _ma_context_uninitPtr.asFunction<int Function(ffi.Pointer<ma_context>)>();
 
+  /// Retrieves the size of the ma_context object.
+  ///
+  /// This is mainly for the purpose of bindings to know how much memory to allocate.
   int ma_context_sizeof() {
     return _ma_context_sizeof();
   }
@@ -8883,6 +9261,21 @@ class MiniAudioBindings {
   late final _ma_context_sizeof =
       _ma_context_sizeofPtr.asFunction<int Function()>();
 
+  /// Retrieves a pointer to the log object associated with this context.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// Pass the returned pointer to `ma_log_post()`, `ma_log_postv()` or `ma_log_postf()` to post a log
+  /// message.
+  ///
+  /// You can attach your own logging callback to the log with `ma_log_register_callback()`
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// A pointer to the `ma_log` object that the context uses to post log messages. If some error occurs,
+  /// NULL will be returned.
   ffi.Pointer<ma_log> ma_context_get_log(
     ffi.Pointer<ma_context> pContext,
   ) {
@@ -8898,6 +9291,69 @@ class MiniAudioBindings {
   late final _ma_context_get_log = _ma_context_get_logPtr
       .asFunction<ffi.Pointer<ma_log> Function(ffi.Pointer<ma_context>)>();
 
+  /// Enumerates over every device (both playback and capture).
+  ///
+  /// This is a lower-level enumeration function to the easier to use `ma_context_get_devices()`. Use `ma_context_enumerate_devices()` if you would rather not incur
+  /// an internal heap allocation, or it simply suits your code better.
+  ///
+  /// Note that this only retrieves the ID and name/description of the device. The reason for only retrieving basic information is that it would otherwise require
+  /// opening the backend device in order to probe it for more detailed information which can be inefficient. Consider using `ma_context_get_device_info()` for this,
+  /// but don't call it from within the enumeration callback.
+  ///
+  /// Returning false from the callback will stop enumeration. Returning true will continue enumeration.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pContext (in)
+  /// A pointer to the context performing the enumeration.
+  ///
+  /// callback (in)
+  /// The callback to fire for each enumerated device.
+  ///
+  /// pUserData (in)
+  /// A pointer to application-defined data passed to the callback.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe. This is guarded using a simple mutex lock.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// Do _not_ assume the first enumerated device of a given type is the default device.
+  ///
+  /// Some backends and platforms may only support default playback and capture devices.
+  ///
+  /// In general, you should not do anything complicated from within the callback. In particular, do not try initializing a device from within the callback. Also,
+  /// do not try to call `ma_context_get_device_info()` from within the callback.
+  ///
+  /// Consider using `ma_context_get_devices()` for a simpler and safer API, albeit at the expense of an internal heap allocation.
+  ///
+  ///
+  /// Example 1 - Simple Enumeration
+  /// ------------------------------
+  /// ma_bool32 ma_device_enum_callback(ma_context* pContext, ma_device_type deviceType, const ma_device_info* pInfo, void* pUserData)
+  /// {
+  /// printf("Device Name: %s\n", pInfo->name);
+  /// return MA_TRUE;
+  /// }
+  ///
+  /// ma_result result = ma_context_enumerate_devices(&context, my_device_enum_callback, pMyUserData);
+  /// if (result != MA_SUCCESS) {
+  /// // Error.
+  /// }
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_context_get_devices()
   int ma_context_enumerate_devices(
     ffi.Pointer<ma_context> pContext,
     ma_enum_devices_callback_proc callback,
@@ -8921,6 +9377,53 @@ class MiniAudioBindings {
           int Function(ffi.Pointer<ma_context>, ma_enum_devices_callback_proc,
               ffi.Pointer<ffi.Void>)>();
 
+  /// Retrieves basic information about every active playback and/or capture device.
+  ///
+  /// This function will allocate memory internally for the device lists and return a pointer to them through the `ppPlaybackDeviceInfos` and `ppCaptureDeviceInfos`
+  /// parameters. If you do not want to incur the overhead of these allocations consider using `ma_context_enumerate_devices()` which will instead use a callback.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pContext (in)
+  /// A pointer to the context performing the enumeration.
+  ///
+  /// ppPlaybackDeviceInfos (out)
+  /// A pointer to a pointer that will receive the address of a buffer containing the list of `ma_device_info` structures for playback devices.
+  ///
+  /// pPlaybackDeviceCount (out)
+  /// A pointer to an unsigned integer that will receive the number of playback devices.
+  ///
+  /// ppCaptureDeviceInfos (out)
+  /// A pointer to a pointer that will receive the address of a buffer containing the list of `ma_device_info` structures for capture devices.
+  ///
+  /// pCaptureDeviceCount (out)
+  /// A pointer to an unsigned integer that will receive the number of capture devices.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Unsafe. Since each call to this function invalidates the pointers from the previous call, you should not be calling this simultaneously across multiple
+  /// threads. Instead, you need to make a copy of the returned data with your own higher level synchronization.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// It is _not_ safe to assume the first device in the list is the default device.
+  ///
+  /// You can pass in NULL for the playback or capture lists in which case they'll be ignored.
+  ///
+  /// The returned pointers will become invalid upon the next call this this function, or when the context is uninitialized. Do not free the returned pointers.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_context_get_devices()
   int ma_context_get_devices(
     ffi.Pointer<ma_context> pContext,
     ffi.Pointer<ffi.Pointer<ma_device_info>> ppPlaybackDeviceInfos,
@@ -8953,6 +9456,44 @@ class MiniAudioBindings {
           ffi.Pointer<ffi.Pointer<ma_device_info>>,
           ffi.Pointer<ma_uint32>)>();
 
+  /// Retrieves information about a device of the given type, with the specified ID and share mode.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pContext (in)
+  /// A pointer to the context performing the query.
+  ///
+  /// deviceType (in)
+  /// The type of the device being queried. Must be either `ma_device_type_playback` or `ma_device_type_capture`.
+  ///
+  /// pDeviceID (in)
+  /// The ID of the device being queried.
+  ///
+  /// pDeviceInfo (out)
+  /// A pointer to the `ma_device_info` structure that will receive the device information.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe. This is guarded using a simple mutex lock.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// Do _not_ call this from within the `ma_context_enumerate_devices()` callback.
+  ///
+  /// It's possible for a device to have different information and capabilities depending on whether or not it's opened in shared or exclusive mode. For example, in
+  /// shared mode, WASAPI always uses floating point samples for mixing, but in exclusive mode it can be anything. Therefore, this function allows you to specify
+  /// which share mode you want information for. Note that not all backends and devices support shared or exclusive mode, in which case this function will fail if
+  /// the requested share mode is unsupported.
+  ///
+  /// This leaves pDeviceInfo unmodified in the result of an error.
   int ma_context_get_device_info(
     ffi.Pointer<ma_context> pContext,
     int deviceType,
@@ -8979,6 +9520,18 @@ class MiniAudioBindings {
           int Function(ffi.Pointer<ma_context>, int, ffi.Pointer<ma_device_id>,
               ffi.Pointer<ma_device_info>)>();
 
+  /// Determines if the given context supports loopback mode.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pContext (in)
+  /// A pointer to the context getting queried.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_TRUE if the context supports loopback mode; MA_FALSE otherwise.
   int ma_context_is_loopback_supported(
     ffi.Pointer<ma_context> pContext,
   ) {
@@ -8994,6 +9547,68 @@ class MiniAudioBindings {
       _ma_context_is_loopback_supportedPtr
           .asFunction<int Function(ffi.Pointer<ma_context>)>();
 
+  /// Initializes a device config with default settings.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// deviceType (in)
+  /// The type of the device this config is being initialized for. This must set to one of the following:
+  ///
+  /// |-------------------------|
+  /// | Device Type             |
+  /// |-------------------------|
+  /// | ma_device_type_playback |
+  /// | ma_device_type_capture  |
+  /// | ma_device_type_duplex   |
+  /// | ma_device_type_loopback |
+  /// |-------------------------|
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// A new device config object with default settings. You will typically want to adjust the config after this function returns. See remarks.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Safe, but don't try initializing a device in a callback.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// The returned config will be initialized to defaults. You will normally want to customize a few variables before initializing the device. See Example 1 for a
+  /// typical configuration which sets the sample format, channel count, sample rate, data callback and user data. These are usually things you will want to change
+  /// before initializing the device.
+  ///
+  /// See `ma_device_init()` for details on specific configuration options.
+  ///
+  ///
+  /// Example 1 - Simple Configuration
+  /// --------------------------------
+  /// The example below is what a program will typically want to configure for each device at a minimum. Notice how `ma_device_config_init()` is called first, and
+  /// then the returned object is modified directly. This is important because it ensures that your program continues to work as new configuration options are added
+  /// to the `ma_device_config` structure.
+  ///
+  /// ```c
+  /// ma_device_config config = ma_device_config_init(ma_device_type_playback);
+  /// config.playback.format   = ma_format_f32;
+  /// config.playback.channels = 2;
+  /// config.sampleRate        = 48000;
+  /// config.dataCallback      = ma_data_callback;
+  /// config.pUserData         = pMyUserData;
+  /// ```
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_init()
+  /// ma_device_init_ex()
   ma_device_config ma_device_config_init(
     int deviceType,
   ) {
@@ -9008,6 +9623,331 @@ class MiniAudioBindings {
   late final _ma_device_config_init =
       _ma_device_config_initPtr.asFunction<ma_device_config Function(int)>();
 
+  /// Initializes a device.
+  ///
+  /// A device represents a physical audio device. The idea is you send or receive audio data from the device to either play it back through a speaker, or capture it
+  /// from a microphone. Whether or not you should send or receive data from the device (or both) depends on the type of device you are initializing which can be
+  /// playback, capture, full-duplex or loopback. (Note that loopback mode is only supported on select backends.) Sending and receiving audio data to and from the
+  /// device is done via a callback which is fired by miniaudio at periodic time intervals.
+  ///
+  /// The frequency at which data is delivered to and from a device depends on the size of it's period. The size of the period can be defined in terms of PCM frames
+  /// or milliseconds, whichever is more convenient. Generally speaking, the smaller the period, the lower the latency at the expense of higher CPU usage and
+  /// increased risk of glitching due to the more frequent and granular data deliver intervals. The size of a period will depend on your requirements, but
+  /// miniaudio's defaults should work fine for most scenarios. If you're building a game you should leave this fairly small, whereas if you're building a simple
+  /// media player you can make it larger. Note that the period size you request is actually just a hint - miniaudio will tell the backend what you want, but the
+  /// backend is ultimately responsible for what it gives you. You cannot assume you will get exactly what you ask for.
+  ///
+  /// When delivering data to and from a device you need to make sure it's in the correct format which you can set through the device configuration. You just set the
+  /// format that you want to use and miniaudio will perform all of the necessary conversion for you internally. When delivering data to and from the callback you
+  /// can assume the format is the same as what you requested when you initialized the device. See Remarks for more details on miniaudio's data conversion pipeline.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pContext (in, optional)
+  /// A pointer to the context that owns the device. This can be null, in which case it creates a default context internally.
+  ///
+  /// pConfig (in)
+  /// A pointer to the device configuration. Cannot be null. See remarks for details.
+  ///
+  /// pDevice (out)
+  /// A pointer to the device object being initialized.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Unsafe. It is not safe to call this function simultaneously for different devices because some backends depend on and mutate global state. The same applies to
+  /// calling this at the same time as `ma_device_uninit()`.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Unsafe. It is not safe to call this inside any callback.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// Setting `pContext` to NULL will result in miniaudio creating a default context internally and is equivalent to passing in a context initialized like so:
+  ///
+  /// ```c
+  /// ma_context_init(NULL, 0, NULL, &context);
+  /// ```
+  ///
+  /// Do not set `pContext` to NULL if you are needing to open multiple devices. You can, however, use NULL when initializing the first device, and then use
+  /// device.pContext for the initialization of other devices.
+  ///
+  /// The device can be configured via the `pConfig` argument. The config object is initialized with `ma_device_config_init()`. Individual configuration settings can
+  /// then be set directly on the structure. Below are the members of the `ma_device_config` object.
+  ///
+  /// deviceType
+  /// Must be `ma_device_type_playback`, `ma_device_type_capture`, `ma_device_type_duplex` of `ma_device_type_loopback`.
+  ///
+  /// sampleRate
+  /// The sample rate, in hertz. The most common sample rates are 48000 and 44100. Setting this to 0 will use the device's native sample rate.
+  ///
+  /// periodSizeInFrames
+  /// The desired size of a period in PCM frames. If this is 0, `periodSizeInMilliseconds` will be used instead. If both are 0 the default buffer size will
+  /// be used depending on the selected performance profile. This value affects latency. See below for details.
+  ///
+  /// periodSizeInMilliseconds
+  /// The desired size of a period in milliseconds. If this is 0, `periodSizeInFrames` will be used instead. If both are 0 the default buffer size will be
+  /// used depending on the selected performance profile. The value affects latency. See below for details.
+  ///
+  /// periods
+  /// The number of periods making up the device's entire buffer. The total buffer size is `periodSizeInFrames` or `periodSizeInMilliseconds` multiplied by
+  /// this value. This is just a hint as backends will be the ones who ultimately decide how your periods will be configured.
+  ///
+  /// performanceProfile
+  /// A hint to miniaudio as to the performance requirements of your program. Can be either `ma_performance_profile_low_latency` (default) or
+  /// `ma_performance_profile_conservative`. This mainly affects the size of default buffers and can usually be left at it's default value.
+  ///
+  /// noPreSilencedOutputBuffer
+  /// When set to true, the contents of the output buffer passed into the data callback will be left undefined. When set to false (default), the contents of
+  /// the output buffer will be cleared the zero. You can use this to avoid the overhead of zeroing out the buffer if you can guarantee that your data
+  /// callback will write to every sample in the output buffer, or if you are doing your own clearing.
+  ///
+  /// noClip
+  /// When set to true, the contents of the output buffer passed into the data callback will be clipped after returning. When set to false (default), the
+  /// contents of the output buffer are left alone after returning and it will be left up to the backend itself to decide whether or not the clip. This only
+  /// applies when the playback sample format is f32.
+  ///
+  /// noDisableDenormals
+  /// By default, miniaudio will disable denormals when the data callback is called. Setting this to true will prevent the disabling of denormals.
+  ///
+  /// noFixedSizedCallback
+  /// Allows miniaudio to fire the data callback with any frame count. When this is set to false (the default), the data callback will be fired with a
+  /// consistent frame count as specified by `periodSizeInFrames` or `periodSizeInMilliseconds`. When set to true, miniaudio will fire the callback with
+  /// whatever the backend requests, which could be anything.
+  ///
+  /// dataCallback
+  /// The callback to fire whenever data is ready to be delivered to or from the device.
+  ///
+  /// notificationCallback
+  /// The callback to fire when something has changed with the device, such as whether or not it has been started or stopped.
+  ///
+  /// pUserData
+  /// The user data pointer to use with the device. You can access this directly from the device object like `device.pUserData`.
+  ///
+  /// resampling.algorithm
+  /// The resampling algorithm to use when miniaudio needs to perform resampling between the rate specified by `sampleRate` and the device's native rate. The
+  /// default value is `ma_resample_algorithm_linear`, and the quality can be configured with `resampling.linear.lpfOrder`.
+  ///
+  /// resampling.pBackendVTable
+  /// A pointer to an optional vtable that can be used for plugging in a custom resampler.
+  ///
+  /// resampling.pBackendUserData
+  /// A pointer that will passed to callbacks in pBackendVTable.
+  ///
+  /// resampling.linear.lpfOrder
+  /// The linear resampler applies a low-pass filter as part of it's processing for anti-aliasing. This setting controls the order of the filter. The higher
+  /// the value, the better the quality, in general. Setting this to 0 will disable low-pass filtering altogether. The maximum value is
+  /// `MA_MAX_FILTER_ORDER`. The default value is `min(4, MA_MAX_FILTER_ORDER)`.
+  ///
+  /// playback.pDeviceID
+  /// A pointer to a `ma_device_id` structure containing the ID of the playback device to initialize. Setting this NULL (default) will use the system's
+  /// default playback device. Retrieve the device ID from the `ma_device_info` structure, which can be retrieved using device enumeration.
+  ///
+  /// playback.format
+  /// The sample format to use for playback. When set to `ma_format_unknown` the device's native format will be used. This can be retrieved after
+  /// initialization from the device object directly with `device.playback.format`.
+  ///
+  /// playback.channels
+  /// The number of channels to use for playback. When set to 0 the device's native channel count will be used. This can be retrieved after initialization
+  /// from the device object directly with `device.playback.channels`.
+  ///
+  /// playback.pChannelMap
+  /// The channel map to use for playback. When left empty, the device's native channel map will be used. This can be retrieved after initialization from the
+  /// device object direct with `device.playback.pChannelMap`. When set, the buffer should contain `channels` items.
+  ///
+  /// playback.shareMode
+  /// The preferred share mode to use for playback. Can be either `ma_share_mode_shared` (default) or `ma_share_mode_exclusive`. Note that if you specify
+  /// exclusive mode, but it's not supported by the backend, initialization will fail. You can then fall back to shared mode if desired by changing this to
+  /// ma_share_mode_shared and reinitializing.
+  ///
+  /// capture.pDeviceID
+  /// A pointer to a `ma_device_id` structure containing the ID of the capture device to initialize. Setting this NULL (default) will use the system's
+  /// default capture device. Retrieve the device ID from the `ma_device_info` structure, which can be retrieved using device enumeration.
+  ///
+  /// capture.format
+  /// The sample format to use for capture. When set to `ma_format_unknown` the device's native format will be used. This can be retrieved after
+  /// initialization from the device object directly with `device.capture.format`.
+  ///
+  /// capture.channels
+  /// The number of channels to use for capture. When set to 0 the device's native channel count will be used. This can be retrieved after initialization
+  /// from the device object directly with `device.capture.channels`.
+  ///
+  /// capture.pChannelMap
+  /// The channel map to use for capture. When left empty, the device's native channel map will be used. This can be retrieved after initialization from the
+  /// device object direct with `device.capture.pChannelMap`. When set, the buffer should contain `channels` items.
+  ///
+  /// capture.shareMode
+  /// The preferred share mode to use for capture. Can be either `ma_share_mode_shared` (default) or `ma_share_mode_exclusive`. Note that if you specify
+  /// exclusive mode, but it's not supported by the backend, initialization will fail. You can then fall back to shared mode if desired by changing this to
+  /// ma_share_mode_shared and reinitializing.
+  ///
+  /// wasapi.noAutoConvertSRC
+  /// WASAPI only. When set to true, disables WASAPI's automatic resampling and forces the use of miniaudio's resampler. Defaults to false.
+  ///
+  /// wasapi.noDefaultQualitySRC
+  /// WASAPI only. Only used when `wasapi.noAutoConvertSRC` is set to false. When set to true, disables the use of `AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY`.
+  /// You should usually leave this set to false, which is the default.
+  ///
+  /// wasapi.noAutoStreamRouting
+  /// WASAPI only. When set to true, disables automatic stream routing on the WASAPI backend. Defaults to false.
+  ///
+  /// wasapi.noHardwareOffloading
+  /// WASAPI only. When set to true, disables the use of WASAPI's hardware offloading feature. Defaults to false.
+  ///
+  /// alsa.noMMap
+  /// ALSA only. When set to true, disables MMap mode. Defaults to false.
+  ///
+  /// alsa.noAutoFormat
+  /// ALSA only. When set to true, disables ALSA's automatic format conversion by including the SND_PCM_NO_AUTO_FORMAT flag. Defaults to false.
+  ///
+  /// alsa.noAutoChannels
+  /// ALSA only. When set to true, disables ALSA's automatic channel conversion by including the SND_PCM_NO_AUTO_CHANNELS flag. Defaults to false.
+  ///
+  /// alsa.noAutoResample
+  /// ALSA only. When set to true, disables ALSA's automatic resampling by including the SND_PCM_NO_AUTO_RESAMPLE flag. Defaults to false.
+  ///
+  /// pulse.pStreamNamePlayback
+  /// PulseAudio only. Sets the stream name for playback.
+  ///
+  /// pulse.pStreamNameCapture
+  /// PulseAudio only. Sets the stream name for capture.
+  ///
+  /// coreaudio.allowNominalSampleRateChange
+  /// Core Audio only. Desktop only. When enabled, allows the sample rate of the device to be changed at the operating system level. This
+  /// is disabled by default in order to prevent intrusive changes to the user's system. This is useful if you want to use a sample rate
+  /// that is known to be natively supported by the hardware thereby avoiding the cost of resampling. When set to true, miniaudio will
+  /// find the closest match between the sample rate requested in the device config and the sample rates natively supported by the
+  /// hardware. When set to false, the sample rate currently set by the operating system will always be used.
+  ///
+  /// opensl.streamType
+  /// OpenSL only. Explicitly sets the stream type. If left unset (`ma_opensl_stream_type_default`), the
+  /// stream type will be left unset. Think of this as the type of audio you're playing.
+  ///
+  /// opensl.recordingPreset
+  /// OpenSL only. Explicitly sets the type of recording your program will be doing. When left
+  /// unset, the recording preset will be left unchanged.
+  ///
+  /// aaudio.usage
+  /// AAudio only. Explicitly sets the nature of the audio the program will be consuming. When
+  /// left unset, the usage will be left unchanged.
+  ///
+  /// aaudio.contentType
+  /// AAudio only. Sets the content type. When left unset, the content type will be left unchanged.
+  ///
+  /// aaudio.inputPreset
+  /// AAudio only. Explicitly sets the type of recording your program will be doing. When left
+  /// unset, the input preset will be left unchanged.
+  ///
+  /// aaudio.noAutoStartAfterReroute
+  /// AAudio only. Controls whether or not the device should be automatically restarted after a
+  /// stream reroute. When set to false (default) the device will be restarted automatically;
+  /// otherwise the device will be stopped.
+  ///
+  ///
+  /// Once initialized, the device's config is immutable. If you need to change the config you will need to initialize a new device.
+  ///
+  /// After initializing the device it will be in a stopped state. To start it, use `ma_device_start()`.
+  ///
+  /// If both `periodSizeInFrames` and `periodSizeInMilliseconds` are set to zero, it will default to `MA_DEFAULT_PERIOD_SIZE_IN_MILLISECONDS_LOW_LATENCY` or
+  /// `MA_DEFAULT_PERIOD_SIZE_IN_MILLISECONDS_CONSERVATIVE`, depending on whether or not `performanceProfile` is set to `ma_performance_profile_low_latency` or
+  /// `ma_performance_profile_conservative`.
+  ///
+  /// If you request exclusive mode and the backend does not support it an error will be returned. For robustness, you may want to first try initializing the device
+  /// in exclusive mode, and then fall back to shared mode if required. Alternatively you can just request shared mode (the default if you leave it unset in the
+  /// config) which is the most reliable option. Some backends do not have a practical way of choosing whether or not the device should be exclusive or not (ALSA,
+  /// for example) in which case it just acts as a hint. Unless you have special requirements you should try avoiding exclusive mode as it's intrusive to the user.
+  /// Starting with Windows 10, miniaudio will use low-latency shared mode where possible which may make exclusive mode unnecessary.
+  ///
+  /// When sending or receiving data to/from a device, miniaudio will internally perform a format conversion to convert between the format specified by the config
+  /// and the format used internally by the backend. If you pass in 0 for the sample format, channel count, sample rate _and_ channel map, data transmission will run
+  /// on an optimized pass-through fast path. You can retrieve the format, channel count and sample rate by inspecting the `playback/capture.format`,
+  /// `playback/capture.channels` and `sampleRate` members of the device object.
+  ///
+  /// When compiling for UWP you must ensure you call this function on the main UI thread because the operating system may need to present the user with a message
+  /// asking for permissions. Please refer to the official documentation for ActivateAudioInterfaceAsync() for more information.
+  ///
+  /// ALSA Specific: When initializing the default device, requesting shared mode will try using the "dmix" device for playback and the "dsnoop" device for capture.
+  /// If these fail it will try falling back to the "hw" device.
+  ///
+  ///
+  /// Example 1 - Simple Initialization
+  /// ---------------------------------
+  /// This example shows how to initialize a simple playback device using a standard configuration. If you are just needing to do simple playback from the default
+  /// playback device this is usually all you need.
+  ///
+  /// ```c
+  /// ma_device_config config = ma_device_config_init(ma_device_type_playback);
+  /// config.playback.format   = ma_format_f32;
+  /// config.playback.channels = 2;
+  /// config.sampleRate        = 48000;
+  /// config.dataCallback      = ma_data_callback;
+  /// config.pMyUserData       = pMyUserData;
+  ///
+  /// ma_device device;
+  /// ma_result result = ma_device_init(NULL, &config, &device);
+  /// if (result != MA_SUCCESS) {
+  /// // Error
+  /// }
+  /// ```
+  ///
+  ///
+  /// Example 2 - Advanced Initialization
+  /// -----------------------------------
+  /// This example shows how you might do some more advanced initialization. In this hypothetical example we want to control the latency by setting the buffer size
+  /// and period count. We also want to allow the user to be able to choose which device to output from which means we need a context so we can perform device
+  /// enumeration.
+  ///
+  /// ```c
+  /// ma_context context;
+  /// ma_result result = ma_context_init(NULL, 0, NULL, &context);
+  /// if (result != MA_SUCCESS) {
+  /// // Error
+  /// }
+  ///
+  /// ma_device_info* pPlaybackDeviceInfos;
+  /// ma_uint32 playbackDeviceCount;
+  /// result = ma_context_get_devices(&context, &pPlaybackDeviceInfos, &playbackDeviceCount, NULL, NULL);
+  /// if (result != MA_SUCCESS) {
+  /// // Error
+  /// }
+  ///
+  /// // ... choose a device from pPlaybackDeviceInfos ...
+  ///
+  /// ma_device_config config = ma_device_config_init(ma_device_type_playback);
+  /// config.playback.pDeviceID       = pMyChosenDeviceID;    // <-- Get this from the `id` member of one of the `ma_device_info` objects returned by ma_context_get_devices().
+  /// config.playback.format          = ma_format_f32;
+  /// config.playback.channels        = 2;
+  /// config.sampleRate               = 48000;
+  /// config.dataCallback             = ma_data_callback;
+  /// config.pUserData                = pMyUserData;
+  /// config.periodSizeInMilliseconds = 10;
+  /// config.periods                  = 3;
+  ///
+  /// ma_device device;
+  /// result = ma_device_init(&context, &config, &device);
+  /// if (result != MA_SUCCESS) {
+  /// // Error
+  /// }
+  /// ```
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_config_init()
+  /// ma_device_uninit()
+  /// ma_device_start()
+  /// ma_context_init()
+  /// ma_context_get_devices()
+  /// ma_context_enumerate_devices()
   int ma_device_init(
     ffi.Pointer<ma_context> pContext,
     ffi.Pointer<ma_device_config> pConfig,
@@ -9030,6 +9970,60 @@ class MiniAudioBindings {
       int Function(ffi.Pointer<ma_context>, ffi.Pointer<ma_device_config>,
           ffi.Pointer<ma_device>)>();
 
+  /// Initializes a device without a context, with extra parameters for controlling the configuration of the internal self-managed context.
+  ///
+  /// This is the same as `ma_device_init()`, only instead of a context being passed in, the parameters from `ma_context_init()` are passed in instead. This function
+  /// allows you to configure the internally created context.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// backends (in, optional)
+  /// A list of backends to try initializing, in priority order. Can be NULL, in which case it uses default priority order.
+  ///
+  /// backendCount (in, optional)
+  /// The number of items in `backend`. Ignored if `backend` is NULL.
+  ///
+  /// pContextConfig (in, optional)
+  /// The context configuration.
+  ///
+  /// pConfig (in)
+  /// A pointer to the device configuration. Cannot be null. See remarks for details.
+  ///
+  /// pDevice (out)
+  /// A pointer to the device object being initialized.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Unsafe. It is not safe to call this function simultaneously for different devices because some backends depend on and mutate global state. The same applies to
+  /// calling this at the same time as `ma_device_uninit()`.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Unsafe. It is not safe to call this inside any callback.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// You only need to use this function if you want to configure the context differently to it's defaults. You should never use this function if you want to manage
+  /// your own context.
+  ///
+  /// See the documentation for `ma_context_init()` for information on the different context configuration options.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_init()
+  /// ma_device_uninit()
+  /// ma_device_config_init()
+  /// ma_context_init()
   int ma_device_init_ex(
     ffi.Pointer<ffi.Int32> backends,
     int backendCount,
@@ -9058,6 +10052,36 @@ class MiniAudioBindings {
       int Function(ffi.Pointer<ffi.Int32>, int, ffi.Pointer<ma_context_config>,
           ffi.Pointer<ma_device_config>, ffi.Pointer<ma_device>)>();
 
+  /// Uninitializes a device.
+  ///
+  /// This will explicitly stop the device. You do not need to call `ma_device_stop()` beforehand, but it's harmless if you do.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device to stop.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// Nothing
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Unsafe. As soon as this API is called the device should be considered undefined.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Unsafe. It is not safe to call this inside any callback. Doing this will result in a deadlock.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_init()
+  /// ma_device_stop()
   void ma_device_uninit(
     ffi.Pointer<ma_device> pDevice,
   ) {
@@ -9072,6 +10096,7 @@ class MiniAudioBindings {
   late final _ma_device_uninit =
       _ma_device_uninitPtr.asFunction<void Function(ffi.Pointer<ma_device>)>();
 
+  /// Retrieves a pointer to the context that owns the given device.
   ffi.Pointer<ma_context> ma_device_get_context(
     ffi.Pointer<ma_device> pDevice,
   ) {
@@ -9087,6 +10112,7 @@ class MiniAudioBindings {
   late final _ma_device_get_context = _ma_device_get_contextPtr
       .asFunction<ffi.Pointer<ma_context> Function(ffi.Pointer<ma_device>)>();
 
+  /// Helper function for retrieving the log object associated with the context that owns this device.
   ffi.Pointer<ma_log> ma_device_get_log(
     ffi.Pointer<ma_device> pDevice,
   ) {
@@ -9102,6 +10128,37 @@ class MiniAudioBindings {
   late final _ma_device_get_log = _ma_device_get_logPtr
       .asFunction<ffi.Pointer<ma_log> Function(ffi.Pointer<ma_device>)>();
 
+  /// Retrieves information about the device.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device whose information is being retrieved.
+  ///
+  /// type (in)
+  /// The device type. This parameter is required for duplex devices. When retrieving device
+  /// information, you are doing so for an individual playback or capture device.
+  ///
+  /// pDeviceInfo (out)
+  /// A pointer to the `ma_device_info` that will receive the device information.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Unsafe. This should be considered unsafe because it may be calling into the backend which may or
+  /// may not be safe.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Unsafe. You should avoid calling this in the data callback because it may call into the backend
+  /// which may or may not be safe.
   int ma_device_get_info(
     ffi.Pointer<ma_device> pDevice,
     int type,
@@ -9121,6 +10178,54 @@ class MiniAudioBindings {
   late final _ma_device_get_info = _ma_device_get_infoPtr.asFunction<
       int Function(ffi.Pointer<ma_device>, int, ffi.Pointer<ma_device_info>)>();
 
+  /// Retrieves the name of the device.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device whose information is being retrieved.
+  ///
+  /// type (in)
+  /// The device type. This parameter is required for duplex devices. When retrieving device
+  /// information, you are doing so for an individual playback or capture device.
+  ///
+  /// pName (out)
+  /// A pointer to the buffer that will receive the name.
+  ///
+  /// nameCap (in)
+  /// The capacity of the output buffer, including space for the null terminator.
+  ///
+  /// pLengthNotIncludingNullTerminator (out, optional)
+  /// A pointer to the variable that will receive the length of the name, not including the null
+  /// terminator.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Unsafe. This should be considered unsafe because it may be calling into the backend which may or
+  /// may not be safe.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Unsafe. You should avoid calling this in the data callback because it may call into the backend
+  /// which may or may not be safe.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// If the name does not fully fit into the output buffer, it'll be truncated. You can pass in NULL to
+  /// `pName` if you want to first get the length of the name for the purpose of memory allocation of the
+  /// output buffer. Allocating a buffer of size `MA_MAX_DEVICE_NAME_LENGTH + 1` should be enough for
+  /// most cases and will avoid the need for the inefficiency of calling this function twice.
+  ///
+  /// This is implemented in terms of `ma_device_get_info()`.
   int ma_device_get_name(
     ffi.Pointer<ma_device> pDevice,
     int type,
@@ -9149,6 +10254,45 @@ class MiniAudioBindings {
       int Function(ffi.Pointer<ma_device>, int, ffi.Pointer<ffi.Char>, int,
           ffi.Pointer<ffi.Size>)>();
 
+  /// Starts the device. For playback devices this begins playback. For capture devices it begins recording.
+  ///
+  /// Use `ma_device_stop()` to stop the device.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device to start.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe. It's safe to call this from any thread with the exception of the callback thread.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Unsafe. It is not safe to call this inside any callback.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// For a playback device, this will retrieve an initial chunk of audio data from the client before returning. The reason for this is to ensure there is valid
+  /// audio data in the buffer, which needs to be done before the device begins playback.
+  ///
+  /// This API waits until the backend device has been started for real by the worker thread. It also waits on a mutex for thread-safety.
+  ///
+  /// Do not call this in any callback.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_stop()
   int ma_device_start(
     ffi.Pointer<ma_device> pDevice,
   ) {
@@ -9163,6 +10307,50 @@ class MiniAudioBindings {
   late final _ma_device_start =
       _ma_device_startPtr.asFunction<int Function(ffi.Pointer<ma_device>)>();
 
+  /// Stops the device. For playback devices this stops playback. For capture devices it stops recording.
+  ///
+  /// Use `ma_device_start()` to start the device again.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device to stop.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe. It's safe to call this from any thread with the exception of the callback thread.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Unsafe. It is not safe to call this inside any callback. Doing this will result in a deadlock.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// This API needs to wait on the worker thread to stop the backend device properly before returning. It also waits on a mutex for thread-safety. In addition, some
+  /// backends need to wait for the device to finish playback/recording of the current fragment which can take some time (usually proportionate to the buffer size
+  /// that was specified at initialization time).
+  ///
+  /// Backends are required to either pause the stream in-place or drain the buffer if pausing is not possible. The reason for this is that stopping the device and
+  /// the resuming it with ma_device_start() (which you might do when your program loses focus) may result in a situation where those samples are never output to the
+  /// speakers or received from the microphone which can in turn result in de-syncs.
+  ///
+  /// Do not call this in any callback.
+  ///
+  /// This will be called implicitly by `ma_device_uninit()`.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_start()
   int ma_device_stop(
     ffi.Pointer<ma_device> pDevice,
   ) {
@@ -9177,6 +10365,35 @@ class MiniAudioBindings {
   late final _ma_device_stop =
       _ma_device_stopPtr.asFunction<int Function(ffi.Pointer<ma_device>)>();
 
+  /// Determines whether or not the device is started.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device whose start state is being retrieved.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// True if the device is started, false otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe. If another thread calls `ma_device_start()` or `ma_device_stop()` at this same time as this function is called, there's a very small chance the return
+  /// value will be out of sync.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Safe. This is implemented as a simple accessor.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_start()
+  /// ma_device_stop()
   int ma_device_is_started(
     ffi.Pointer<ma_device> pDevice,
   ) {
@@ -9191,6 +10408,56 @@ class MiniAudioBindings {
   late final _ma_device_is_started = _ma_device_is_startedPtr
       .asFunction<int Function(ffi.Pointer<ma_device>)>();
 
+  /// Retrieves the state of the device.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device whose state is being retrieved.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// The current state of the device. The return value will be one of the following:
+  ///
+  /// +-------------------------------+------------------------------------------------------------------------------+
+  /// | ma_device_state_uninitialized | Will only be returned if the device is in the middle of initialization.      |
+  /// +-------------------------------+------------------------------------------------------------------------------+
+  /// | ma_device_state_stopped       | The device is stopped. The initial state of the device after initialization. |
+  /// +-------------------------------+------------------------------------------------------------------------------+
+  /// | ma_device_state_started       | The device started and requesting and/or delivering audio data.              |
+  /// +-------------------------------+------------------------------------------------------------------------------+
+  /// | ma_device_state_starting      | The device is in the process of starting.                                    |
+  /// +-------------------------------+------------------------------------------------------------------------------+
+  /// | ma_device_state_stopping      | The device is in the process of stopping.                                    |
+  /// +-------------------------------+------------------------------------------------------------------------------+
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe. This is implemented as a simple accessor. Note that if the device is started or stopped at the same time as this function is called,
+  /// there's a possibility the return value could be out of sync. See remarks.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Safe. This is implemented as a simple accessor.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// The general flow of a devices state goes like this:
+  ///
+  /// ```
+  /// ma_device_init()  -> ma_device_state_uninitialized -> ma_device_state_stopped
+  /// ma_device_start() -> ma_device_state_starting      -> ma_device_state_started
+  /// ma_device_stop()  -> ma_device_state_stopping      -> ma_device_state_stopped
+  /// ```
+  ///
+  /// When the state of the device is changed with `ma_device_start()` or `ma_device_stop()` at this same time as this function is called, the
+  /// value returned by this function could potentially be out of sync. If this is significant to your program you need to implement your own
+  /// synchronization.
   int ma_device_get_state(
     ffi.Pointer<ma_device> pDevice,
   ) {
@@ -9205,6 +10472,50 @@ class MiniAudioBindings {
   late final _ma_device_get_state = _ma_device_get_statePtr
       .asFunction<int Function(ffi.Pointer<ma_device>)>();
 
+  /// Performs post backend initialization routines for setting up internal data conversion.
+  ///
+  /// This should be called whenever the backend is initialized. The only time this should be called from
+  /// outside of miniaudio is if you're implementing a custom backend, and you would only do it if you
+  /// are reinitializing the backend due to rerouting or reinitializing for some reason.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice [in]
+  /// A pointer to the device.
+  ///
+  /// deviceType [in]
+  /// The type of the device that was just reinitialized.
+  ///
+  /// pPlaybackDescriptor [in]
+  /// The descriptor of the playback device containing the internal data format and buffer sizes.
+  ///
+  /// pPlaybackDescriptor [in]
+  /// The descriptor of the capture device containing the internal data format and buffer sizes.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other error otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Unsafe. This will be reinitializing internal data converters which may be in use by another thread.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Unsafe. This will be reinitializing internal data converters which may be in use by the callback.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// For a duplex device, you can call this for only one side of the system. This is why the deviceType
+  /// is specified as a parameter rather than deriving it from the device.
+  ///
+  /// You do not need to call this manually unless you are doing a custom backend, in which case you need
+  /// only do it if you're manually performing rerouting or reinitialization.
   int ma_device_post_init(
     ffi.Pointer<ma_device> pDevice,
     int deviceType,
@@ -9233,6 +10544,50 @@ class MiniAudioBindings {
           ffi.Pointer<ma_device_descriptor>,
           ffi.Pointer<ma_device_descriptor>)>();
 
+  /// Sets the master volume factor for the device.
+  ///
+  /// The volume factor must be between 0 (silence) and 1 (full volume). Use `ma_device_set_master_volume_db()` to use decibel notation, where 0 is full volume and
+  /// values less than 0 decreases the volume.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device whose volume is being set.
+  ///
+  /// volume (in)
+  /// The new volume factor. Must be >= 0.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if the volume was set successfully.
+  /// MA_INVALID_ARGS if pDevice is NULL.
+  /// MA_INVALID_ARGS if volume is negative.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe. This just sets a local member of the device object.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Safe. If you set the volume in the data callback, that data written to the output buffer will have the new volume applied.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// This applies the volume factor across all channels.
+  ///
+  /// This does not change the operating system's volume. It only affects the volume for the given `ma_device` object's audio stream.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_get_master_volume()
+  /// ma_device_set_master_volume_db()
+  /// ma_device_get_master_volume_db()
   int ma_device_set_master_volume(
     ffi.Pointer<ma_device> pDevice,
     double volume,
@@ -9250,6 +10605,45 @@ class MiniAudioBindings {
   late final _ma_device_set_master_volume = _ma_device_set_master_volumePtr
       .asFunction<int Function(ffi.Pointer<ma_device>, double)>();
 
+  /// Retrieves the master volume factor for the device.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device whose volume factor is being retrieved.
+  ///
+  /// pVolume (in)
+  /// A pointer to the variable that will receive the volume factor. The returned value will be in the range of [0, 1].
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful.
+  /// MA_INVALID_ARGS if pDevice is NULL.
+  /// MA_INVALID_ARGS if pVolume is NULL.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe. This just a simple member retrieval.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Safe.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// If an error occurs, `*pVolume` will be set to 0.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_set_master_volume()
+  /// ma_device_set_master_volume_gain_db()
+  /// ma_device_get_master_volume_gain_db()
   int ma_device_get_master_volume(
     ffi.Pointer<ma_device> pDevice,
     ffi.Pointer<ffi.Float> pVolume,
@@ -9268,6 +10662,49 @@ class MiniAudioBindings {
       _ma_device_get_master_volumePtr.asFunction<
           int Function(ffi.Pointer<ma_device>, ffi.Pointer<ffi.Float>)>();
 
+  /// Sets the master volume for the device as gain in decibels.
+  ///
+  /// A gain of 0 is full volume, whereas a gain of < 0 will decrease the volume.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device whose gain is being set.
+  ///
+  /// gainDB (in)
+  /// The new volume as gain in decibels. Must be less than or equal to 0, where 0 is full volume and anything less than 0 decreases the volume.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if the volume was set successfully.
+  /// MA_INVALID_ARGS if pDevice is NULL.
+  /// MA_INVALID_ARGS if the gain is > 0.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe. This just sets a local member of the device object.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Safe. If you set the volume in the data callback, that data written to the output buffer will have the new volume applied.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// This applies the gain across all channels.
+  ///
+  /// This does not change the operating system's volume. It only affects the volume for the given `ma_device` object's audio stream.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_get_master_volume_gain_db()
+  /// ma_device_set_master_volume()
+  /// ma_device_get_master_volume()
   int ma_device_set_master_volume_db(
     ffi.Pointer<ma_device> pDevice,
     double gainDB,
@@ -9286,6 +10723,45 @@ class MiniAudioBindings {
       _ma_device_set_master_volume_dbPtr
           .asFunction<int Function(ffi.Pointer<ma_device>, double)>();
 
+  /// Retrieves the master gain in decibels.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to the device whose gain is being retrieved.
+  ///
+  /// pGainDB (in)
+  /// A pointer to the variable that will receive the gain in decibels. The returned value will be <= 0.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful.
+  /// MA_INVALID_ARGS if pDevice is NULL.
+  /// MA_INVALID_ARGS if pGainDB is NULL.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe. This just a simple member retrieval.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Safe.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// If an error occurs, `*pGainDB` will be set to 0.
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_device_set_master_volume_db()
+  /// ma_device_set_master_volume()
+  /// ma_device_get_master_volume()
   int ma_device_get_master_volume_db(
     ffi.Pointer<ma_device> pDevice,
     ffi.Pointer<ffi.Float> pGainDB,
@@ -9304,6 +10780,49 @@ class MiniAudioBindings {
       _ma_device_get_master_volume_dbPtr.asFunction<
           int Function(ffi.Pointer<ma_device>, ffi.Pointer<ffi.Float>)>();
 
+  /// Called from the data callback of asynchronous backends to allow miniaudio to process the data and fire the miniaudio data callback.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDevice (in)
+  /// A pointer to device whose processing the data callback.
+  ///
+  /// pOutput (out)
+  /// A pointer to the buffer that will receive the output PCM frame data. On a playback device this must not be NULL. On a duplex device
+  /// this can be NULL, in which case pInput must not be NULL.
+  ///
+  /// pInput (in)
+  /// A pointer to the buffer containing input PCM frame data. On a capture device this must not be NULL. On a duplex device this can be
+  /// NULL, in which case `pOutput` must not be NULL.
+  ///
+  /// frameCount (in)
+  /// The number of frames being processed.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful; any other result code otherwise.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// This function should only ever be called from the internal data callback of the backend. It is safe to call this simultaneously between a
+  /// playback and capture device in duplex setups.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Do not call this from the miniaudio data callback. It should only ever be called from the internal data callback of the backend.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// If both `pOutput` and `pInput` are NULL, and error will be returned. In duplex scenarios, both `pOutput` and `pInput` can be non-NULL, in
+  /// which case `pInput` will be processed first, followed by `pOutput`.
+  ///
+  /// If you are implementing a custom backend, and that backend uses a callback for data delivery, you'll need to call this from inside that
+  /// callback.
   int ma_device_handle_backend_data_callback(
     ffi.Pointer<ma_device> pDevice,
     ffi.Pointer<ffi.Void> pOutput,
@@ -9330,6 +10849,54 @@ class MiniAudioBindings {
           int Function(ffi.Pointer<ma_device>, ffi.Pointer<ffi.Void>,
               ffi.Pointer<ffi.Void>, int)>();
 
+  /// Calculates an appropriate buffer size from a descriptor, native sample rate and performance profile.
+  ///
+  /// This function is used by backends for helping determine an appropriately sized buffer to use with
+  /// the device depending on the values of `periodSizeInFrames` and `periodSizeInMilliseconds` in the
+  /// `pDescriptor` object. Since buffer size calculations based on time depends on the sample rate, a
+  /// best guess at the device's native sample rate is also required which is where `nativeSampleRate`
+  /// comes in. In addition, the performance profile is also needed for cases where both the period size
+  /// in frames and milliseconds are both zero.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pDescriptor (in)
+  /// A pointer to device descriptor whose `periodSizeInFrames` and `periodSizeInMilliseconds` members
+  /// will be used for the calculation of the buffer size.
+  ///
+  /// nativeSampleRate (in)
+  /// The device's native sample rate. This is only ever used when the `periodSizeInFrames` member of
+  /// `pDescriptor` is zero. In this case, `periodSizeInMilliseconds` will be used instead, in which
+  /// case a sample rate is required to convert to a size in frames.
+  ///
+  /// performanceProfile (in)
+  /// When both the `periodSizeInFrames` and `periodSizeInMilliseconds` members of `pDescriptor` are
+  /// zero, miniaudio will fall back to a buffer size based on the performance profile. The profile
+  /// to use for this calculation is determine by this parameter.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// The calculated buffer size in frames.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// This is safe so long as nothing modifies `pDescriptor` at the same time. However, this function
+  /// should only ever be called from within the backend's device initialization routine and therefore
+  /// shouldn't have any multithreading concerns.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// This is safe to call within the data callback, but there is no reason to ever do this.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// If `nativeSampleRate` is zero, this function will fall back to `pDescriptor->sampleRate`. If that
+  /// is also zero, `MA_DEFAULT_SAMPLE_RATE` will be used instead.
   int ma_calculate_buffer_size_in_frames_from_descriptor(
     ffi.Pointer<ma_device_descriptor> pDescriptor,
     int nativeSampleRate,
@@ -9351,6 +10918,7 @@ class MiniAudioBindings {
       _ma_calculate_buffer_size_in_frames_from_descriptorPtr.asFunction<
           int Function(ffi.Pointer<ma_device_descriptor>, int, int)>();
 
+  /// Retrieves a friendly name for a backend.
   ffi.Pointer<ffi.Char> ma_get_backend_name(
     int backend,
   ) {
@@ -9365,6 +10933,7 @@ class MiniAudioBindings {
   late final _ma_get_backend_name =
       _ma_get_backend_namePtr.asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
+  /// Retrieves the backend enum from the given name.
   int ma_get_backend_from_name(
     ffi.Pointer<ffi.Char> pBackendName,
     ffi.Pointer<ffi.Int32> pBackend,
@@ -9383,6 +10952,7 @@ class MiniAudioBindings {
       _ma_get_backend_from_namePtr.asFunction<
           int Function(ffi.Pointer<ffi.Char>, ffi.Pointer<ffi.Int32>)>();
 
+  /// Determines whether or not the given backend is available by the compilation environment.
   int ma_is_backend_enabled(
     int backend,
   ) {
@@ -9397,6 +10967,75 @@ class MiniAudioBindings {
   late final _ma_is_backend_enabled =
       _ma_is_backend_enabledPtr.asFunction<int Function(int)>();
 
+  /// Retrieves compile-time enabled backends.
+  ///
+  ///
+  /// Parameters
+  /// ----------
+  /// pBackends (out, optional)
+  /// A pointer to the buffer that will receive the enabled backends. Set to NULL to retrieve the backend count. Setting
+  /// the capacity of the buffer to `MA_BUFFER_COUNT` will guarantee it's large enough for all backends.
+  ///
+  /// backendCap (in)
+  /// The capacity of the `pBackends` buffer.
+  ///
+  /// pBackendCount (out)
+  /// A pointer to the variable that will receive the enabled backend count.
+  ///
+  ///
+  /// Return Value
+  /// ------------
+  /// MA_SUCCESS if successful.
+  /// MA_INVALID_ARGS if `pBackendCount` is NULL.
+  /// MA_NO_SPACE if the capacity of `pBackends` is not large enough.
+  ///
+  /// If `MA_NO_SPACE` is returned, the `pBackends` buffer will be filled with `*pBackendCount` values.
+  ///
+  ///
+  /// Thread Safety
+  /// -------------
+  /// Safe.
+  ///
+  ///
+  /// Callback Safety
+  /// ---------------
+  /// Safe.
+  ///
+  ///
+  /// Remarks
+  /// -------
+  /// If you want to retrieve the number of backends so you can determine the capacity of `pBackends` buffer, you can call
+  /// this function with `pBackends` set to NULL.
+  ///
+  /// This will also enumerate the null backend. If you don't want to include this you need to check for `ma_backend_null`
+  /// when you enumerate over the returned backends and handle it appropriately. Alternatively, you can disable it at
+  /// compile time with `MA_NO_NULL`.
+  ///
+  /// The returned backends are determined based on compile time settings, not the platform it's currently running on. For
+  /// example, PulseAudio will be returned if it was enabled at compile time, even when the user doesn't actually have
+  /// PulseAudio installed.
+  ///
+  ///
+  /// Example 1
+  /// ---------
+  /// The example below retrieves the enabled backend count using a fixed sized buffer allocated on the stack. The buffer is
+  /// given a capacity of `MA_BACKEND_COUNT` which will guarantee it'll be large enough to store all available backends.
+  /// Since `MA_BACKEND_COUNT` is always a relatively small value, this should be suitable for most scenarios.
+  ///
+  /// ```
+  /// ma_backend enabledBackends[MA_BACKEND_COUNT];
+  /// size_t enabledBackendCount;
+  ///
+  /// result = ma_get_enabled_backends(enabledBackends, MA_BACKEND_COUNT, &enabledBackendCount);
+  /// if (result != MA_SUCCESS) {
+  /// // Failed to retrieve enabled backends. Should never happen in this example since all inputs are valid.
+  /// }
+  /// ```
+  ///
+  ///
+  /// See Also
+  /// --------
+  /// ma_is_backend_enabled()
   int ma_get_enabled_backends(
     ffi.Pointer<ffi.Int32> pBackends,
     int backendCap,
@@ -9416,6 +11055,7 @@ class MiniAudioBindings {
   late final _ma_get_enabled_backends = _ma_get_enabled_backendsPtr.asFunction<
       int Function(ffi.Pointer<ffi.Int32>, int, ffi.Pointer<ffi.Size>)>();
 
+  /// Determines whether or not loopback mode is support by a backend.
   int ma_is_loopback_supported(
     int backend,
   ) {
@@ -9430,7 +11070,7 @@ class MiniAudioBindings {
   late final _ma_is_loopback_supported =
       _ma_is_loopback_supportedPtr.asFunction<int Function(int)>();
 
-  /// Utilities
+  /// Calculates a buffer size in milliseconds from the specified number of frames and sample rate.
   int ma_calculate_buffer_size_in_milliseconds_from_frames(
     int bufferSizeInFrames,
     int sampleRate,
@@ -9448,6 +11088,7 @@ class MiniAudioBindings {
       _ma_calculate_buffer_size_in_milliseconds_from_framesPtr
           .asFunction<int Function(int, int)>();
 
+  /// Calculates a buffer size in frames from the specified number of milliseconds and sample rate.
   int ma_calculate_buffer_size_in_frames_from_milliseconds(
     int bufferSizeInMilliseconds,
     int sampleRate,
@@ -9465,6 +11106,7 @@ class MiniAudioBindings {
       _ma_calculate_buffer_size_in_frames_from_millisecondsPtr
           .asFunction<int Function(int, int)>();
 
+  /// Copies PCM frames from one buffer to another.
   void ma_copy_pcm_frames(
     ffi.Pointer<ffi.Void> dst,
     ffi.Pointer<ffi.Void> src,
@@ -9489,6 +11131,12 @@ class MiniAudioBindings {
       void Function(
           ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int, int, int)>();
 
+  /// Copies silent frames into the given buffer.
+  ///
+  /// Remarks
+  /// -------
+  /// For all formats except `ma_format_u8`, the output buffer will be filled with 0. For `ma_format_u8` it will be filled with 128. The reason for this is that it
+  /// makes more sense for the purpose of mixing to initialize it to the center point.
   void ma_silence_pcm_frames(
     ffi.Pointer<ffi.Void> p,
     int frameCount,
@@ -9510,6 +11158,7 @@ class MiniAudioBindings {
   late final _ma_silence_pcm_frames = _ma_silence_pcm_framesPtr
       .asFunction<void Function(ffi.Pointer<ffi.Void>, int, int, int)>();
 
+  /// Offsets a pointer by the specified number of PCM frames.
   ffi.Pointer<ffi.Void> ma_offset_pcm_frames_ptr(
     ffi.Pointer<ffi.Void> p,
     int offsetInFrames,
@@ -9556,6 +11205,7 @@ class MiniAudioBindings {
           ffi.Pointer<ffi.Void> Function(
               ffi.Pointer<ffi.Void>, int, int, int)>();
 
+  /// Clips samples.
   void ma_clip_samples_u8(
     ffi.Pointer<ma_uint8> pDst,
     ffi.Pointer<ma_int16> pSrc,
@@ -9675,6 +11325,9 @@ class MiniAudioBindings {
       void Function(
           ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int, int, int)>();
 
+  /// Helper for applying a volume factor to samples.
+  ///
+  /// Note that the source and destination buffers can be the same, in which case it'll perform the operation in-place.
   void ma_copy_and_apply_volume_factor_u8(
     ffi.Pointer<ma_uint8> pSamplesOut,
     ffi.Pointer<ma_uint8> pSamplesIn,
@@ -10384,6 +12037,7 @@ class MiniAudioBindings {
           void Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, int, int,
               int, double)>();
 
+  /// Helper for converting a linear factor to gain in decibels.
   double ma_volume_linear_to_db(
     double factor,
   ) {
@@ -10398,6 +12052,7 @@ class MiniAudioBindings {
   late final _ma_volume_linear_to_db =
       _ma_volume_linear_to_dbPtr.asFunction<double Function(double)>();
 
+  /// Helper for converting gain in decibels to a linear factor.
   double ma_volume_db_to_linear(
     double gain,
   ) {
@@ -10412,6 +12067,9 @@ class MiniAudioBindings {
   late final _ma_volume_db_to_linear =
       _ma_volume_db_to_linearPtr.asFunction<double Function(double)>();
 
+  /// Mixes the specified number of frames in floating point format with a volume factor.
+  ///
+  /// This will run on an optimized path when the volume is equal to 1.
   int ma_mix_pcm_frames_f32(
     ffi.Pointer<ffi.Float> pDst,
     ffi.Pointer<ffi.Float> pSrc,
@@ -10864,6 +12522,7 @@ class MiniAudioBindings {
       int Function(ffi.Pointer<ffi.WChar>, ffi.Pointer<ma_decoder_config>,
           ffi.Pointer<ma_decoder>)>();
 
+  /// Uninitializes a decoder.
   int ma_decoder_uninit(
     ffi.Pointer<ma_decoder> pDecoder,
   ) {
@@ -10878,6 +12537,9 @@ class MiniAudioBindings {
   late final _ma_decoder_uninit =
       _ma_decoder_uninitPtr.asFunction<int Function(ffi.Pointer<ma_decoder>)>();
 
+  /// Reads PCM frames from the given decoder.
+  ///
+  /// This is not thread safe without your own synchronization.
   int ma_decoder_read_pcm_frames(
     ffi.Pointer<ma_decoder> pDecoder,
     ffi.Pointer<ffi.Void> pFramesOut,
@@ -10904,6 +12566,9 @@ class MiniAudioBindings {
           int Function(ffi.Pointer<ma_decoder>, ffi.Pointer<ffi.Void>, int,
               ffi.Pointer<ma_uint64>)>();
 
+  /// Seeks to a PCM frame based on it's absolute index.
+  ///
+  /// This is not thread safe without your own synchronization.
   int ma_decoder_seek_to_pcm_frame(
     ffi.Pointer<ma_decoder> pDecoder,
     int frameIndex,
@@ -10921,6 +12586,7 @@ class MiniAudioBindings {
   late final _ma_decoder_seek_to_pcm_frame = _ma_decoder_seek_to_pcm_framePtr
       .asFunction<int Function(ffi.Pointer<ma_decoder>, int)>();
 
+  /// Retrieves the decoder's output data format.
   int ma_decoder_get_data_format(
     ffi.Pointer<ma_decoder> pDecoder,
     ffi.Pointer<ffi.Int32> pFormat,
@@ -10958,6 +12624,7 @@ class MiniAudioBindings {
               ffi.Pointer<ma_channel>,
               int)>();
 
+  /// Retrieves the current position of the read cursor in PCM frames.
   int ma_decoder_get_cursor_in_pcm_frames(
     ffi.Pointer<ma_decoder> pDecoder,
     ffi.Pointer<ma_uint64> pCursor,
@@ -10976,6 +12643,18 @@ class MiniAudioBindings {
       _ma_decoder_get_cursor_in_pcm_framesPtr.asFunction<
           int Function(ffi.Pointer<ma_decoder>, ffi.Pointer<ma_uint64>)>();
 
+  /// Retrieves the length of the decoder in PCM frames.
+  ///
+  /// Do not call this on streams of an undefined length, such as internet radio.
+  ///
+  /// If the length is unknown or an error occurs, 0 will be returned.
+  ///
+  /// This will always return 0 for Vorbis decoders. This is due to a limitation with stb_vorbis in push mode which is what miniaudio
+  /// uses internally.
+  ///
+  /// For MP3's, this will decode the entire file. Do not call this in time critical scenarios.
+  ///
+  /// This function is not thread safe without your own synchronization.
   int ma_decoder_get_length_in_pcm_frames(
     ffi.Pointer<ma_decoder> pDecoder,
     ffi.Pointer<ma_uint64> pLength,
@@ -10994,6 +12673,13 @@ class MiniAudioBindings {
       _ma_decoder_get_length_in_pcm_framesPtr.asFunction<
           int Function(ffi.Pointer<ma_decoder>, ffi.Pointer<ma_uint64>)>();
 
+  /// Retrieves the number of frames that can be read before reaching the end.
+  ///
+  /// This calls `ma_decoder_get_length_in_pcm_frames()` so you need to be aware of the rules for that function, in
+  /// particular ensuring you do not call it on streams of an undefined length, such as internet radio.
+  ///
+  /// If the total length of the decoder cannot be retrieved, such as with Vorbis decoders, `MA_NOT_IMPLEMENTED` will be
+  /// returned.
   int ma_decoder_get_available_frames(
     ffi.Pointer<ma_decoder> pDecoder,
     ffi.Pointer<ma_uint64> pAvailableFrames,
@@ -11012,6 +12698,8 @@ class MiniAudioBindings {
       _ma_decoder_get_available_framesPtr.asFunction<
           int Function(ffi.Pointer<ma_decoder>, ffi.Pointer<ma_uint64>)>();
 
+  /// Helper for opening and decoding a file into a heap allocated block of memory. Free the returned pointer with ma_free(). On input,
+  /// pConfig should be set to what you want. On output it will be set to what you got.
   int ma_decode_from_vfs(
     ffi.Pointer<ma_vfs> pVFS,
     ffi.Pointer<ffi.Char> pFilePath,
@@ -11837,6 +13525,7 @@ class MiniAudioBindings {
       _ma_resource_manager_config_initPtr
           .asFunction<ma_resource_manager_config Function()>();
 
+  /// Init.
   int ma_resource_manager_init(
     ffi.Pointer<ma_resource_manager_config> pConfig,
     ffi.Pointer<ma_resource_manager> pResourceManager,
@@ -11887,6 +13576,7 @@ class MiniAudioBindings {
       _ma_resource_manager_get_logPtr.asFunction<
           ffi.Pointer<ma_log> Function(ffi.Pointer<ma_resource_manager>)>();
 
+  /// Registration.
   int ma_resource_manager_register_file(
     ffi.Pointer<ma_resource_manager> pResourceManager,
     ffi.Pointer<ffi.Char> pFilePath,
@@ -12133,6 +13823,7 @@ class MiniAudioBindings {
           int Function(
               ffi.Pointer<ma_resource_manager>, ffi.Pointer<ffi.WChar>)>();
 
+  /// Data Buffers.
   int ma_resource_manager_data_buffer_init_ex(
     ffi.Pointer<ma_resource_manager> pResourceManager,
     ffi.Pointer<ma_resource_manager_data_source_config> pConfig,
@@ -12465,6 +14156,7 @@ class MiniAudioBindings {
           int Function(ffi.Pointer<ma_resource_manager_data_buffer>,
               ffi.Pointer<ma_uint64>)>();
 
+  /// Data Streams.
   int ma_resource_manager_data_stream_init_ex(
     ffi.Pointer<ma_resource_manager> pResourceManager,
     ffi.Pointer<ma_resource_manager_data_source_config> pConfig,
@@ -12771,6 +14463,7 @@ class MiniAudioBindings {
           int Function(ffi.Pointer<ma_resource_manager_data_stream>,
               ffi.Pointer<ma_uint64>)>();
 
+  /// Data Sources.
   int ma_resource_manager_data_source_init_ex(
     ffi.Pointer<ma_resource_manager> pResourceManager,
     ffi.Pointer<ma_resource_manager_data_source_config> pConfig,
@@ -13103,6 +14796,7 @@ class MiniAudioBindings {
           int Function(ffi.Pointer<ma_resource_manager_data_source>,
               ffi.Pointer<ma_uint64>)>();
 
+  /// Job management.
   int ma_resource_manager_post_job(
     ffi.Pointer<ma_resource_manager> pResourceManager,
     ffi.Pointer<ma_job> pJob,
@@ -22784,6 +24478,28 @@ class _SymbolAddresses {
           _library._ma_sound_group_get_time_in_pcm_framesPtr;
 }
 
+/// Logging Levels
+/// ==============
+/// Log levels are only used to give logging callbacks some context as to the severity of a log message
+/// so they can do filtering. All log levels will be posted to registered logging callbacks. If you
+/// don't want to output a certain log level you can discriminate against the log level in the callback.
+///
+/// MA_LOG_LEVEL_DEBUG
+/// Used for debugging. Useful for debug and test builds, but should be disabled in release builds.
+///
+/// MA_LOG_LEVEL_INFO
+/// Informational logging. Useful for debugging. This will never be called from within the data
+/// callback.
+///
+/// MA_LOG_LEVEL_WARNING
+/// Warnings. You should enable this in you development builds and action them when encounted. These
+/// logs usually indicate a potential problem or misconfiguration, but still allow you to keep
+/// running. This will never be called from within the data callback.
+///
+/// MA_LOG_LEVEL_ERROR
+/// Error logging. This will be fired when an operation fails and is subsequently aborted. This can
+/// be fired from within the data callback, in which case the device will be stopped. You should
+/// always have this log level enabled.
 abstract class ma_log_level {
   static const int MA_LOG_LEVEL_DEBUG = 4;
   static const int MA_LOG_LEVEL_INFO = 3;
@@ -22794,11 +24510,13 @@ abstract class ma_log_level {
 final class ma_context extends ffi.Struct {
   external ma_backend_callbacks callbacks;
 
+  /// DirectSound, ALSA, etc.
   @ffi.Int32()
   external int backend;
 
   external ffi.Pointer<ma_log> pLog;
 
+  /// Only used if the log is owned by the context. The pLog member will be set to &log in this case.
   external ma_log log;
 
   @ffi.Int32()
@@ -22811,10 +24529,13 @@ final class ma_context extends ffi.Struct {
 
   external ma_allocation_callbacks allocationCallbacks;
 
+  /// Used to make ma_context_get_devices() thread safe.
   external ma_mutex deviceEnumLock;
 
+  /// Used to make ma_context_get_device_info() thread safe.
   external ma_mutex deviceInfoLock;
 
+  /// Total capacity of pDeviceInfos.
   @ma_uint32()
   external int deviceInfoCapacity;
 
@@ -22824,6 +24545,7 @@ final class ma_context extends ffi.Struct {
   @ma_uint32()
   external int captureDeviceInfoCount;
 
+  /// Playback devices first, then capture.
   external ffi.Pointer<ma_device_info> pDeviceInfos;
 
   external UnnamedUnion8 unnamed;
@@ -22831,6 +24553,72 @@ final class ma_context extends ffi.Struct {
   external UnnamedUnion10 unnamed1;
 }
 
+/// These are the callbacks required to be implemented for a backend. These callbacks are grouped into two parts: context and device. There is one context
+/// to many devices. A device is created from a context.
+///
+/// The general flow goes like this:
+///
+/// 1) A context is created with `onContextInit()`
+/// 1a) Available devices can be enumerated with `onContextEnumerateDevices()` if required.
+/// 1b) Detailed information about a device can be queried with `onContextGetDeviceInfo()` if required.
+/// 2) A device is created from the context that was created in the first step using `onDeviceInit()`, and optionally a device ID that was
+/// selected from device enumeration via `onContextEnumerateDevices()`.
+/// 3) A device is started or stopped with `onDeviceStart()` / `onDeviceStop()`
+/// 4) Data is delivered to and from the device by the backend. This is always done based on the native format returned by the prior call
+/// to `onDeviceInit()`. Conversion between the device's native format and the format requested by the application will be handled by
+/// miniaudio internally.
+///
+/// Initialization of the context is quite simple. You need to do any necessary initialization of internal objects and then output the
+/// callbacks defined in this structure.
+///
+/// Once the context has been initialized you can initialize a device. Before doing so, however, the application may want to know which
+/// physical devices are available. This is where `onContextEnumerateDevices()` comes in. This is fairly simple. For each device, fire the
+/// given callback with, at a minimum, the basic information filled out in `ma_device_info`. When the callback returns `MA_FALSE`, enumeration
+/// needs to stop and the `onContextEnumerateDevices()` function returns with a success code.
+///
+/// Detailed device information can be retrieved from a device ID using `onContextGetDeviceInfo()`. This takes as input the device type and ID,
+/// and on output returns detailed information about the device in `ma_device_info`. The `onContextGetDeviceInfo()` callback must handle the
+/// case when the device ID is NULL, in which case information about the default device needs to be retrieved.
+///
+/// Once the context has been created and the device ID retrieved (if using anything other than the default device), the device can be created.
+/// This is a little bit more complicated than initialization of the context due to it's more complicated configuration. When initializing a
+/// device, a duplex device may be requested. This means a separate data format needs to be specified for both playback and capture. On input,
+/// the data format is set to what the application wants. On output it's set to the native format which should match as closely as possible to
+/// the requested format. The conversion between the format requested by the application and the device's native format will be handled
+/// internally by miniaudio.
+///
+/// On input, if the sample format is set to `ma_format_unknown`, the backend is free to use whatever sample format it desires, so long as it's
+/// supported by miniaudio. When the channel count is set to 0, the backend should use the device's native channel count. The same applies for
+/// sample rate. For the channel map, the default should be used when `ma_channel_map_is_blank()` returns true (all channels set to
+/// `MA_CHANNEL_NONE`). On input, the `periodSizeInFrames` or `periodSizeInMilliseconds` option should always be set. The backend should
+/// inspect both of these variables. If `periodSizeInFrames` is set, it should take priority, otherwise it needs to be derived from the period
+/// size in milliseconds (`periodSizeInMilliseconds`) and the sample rate, keeping in mind that the sample rate may be 0, in which case the
+/// sample rate will need to be determined before calculating the period size in frames. On output, all members of the `ma_device_descriptor`
+/// object should be set to a valid value, except for `periodSizeInMilliseconds` which is optional (`periodSizeInFrames` *must* be set).
+///
+/// Starting and stopping of the device is done with `onDeviceStart()` and `onDeviceStop()` and should be self-explanatory. If the backend uses
+/// asynchronous reading and writing, `onDeviceStart()` and `onDeviceStop()` should always be implemented.
+///
+/// The handling of data delivery between the application and the device is the most complicated part of the process. To make this a bit
+/// easier, some helper callbacks are available. If the backend uses a blocking read/write style of API, the `onDeviceRead()` and
+/// `onDeviceWrite()` callbacks can optionally be implemented. These are blocking and work just like reading and writing from a file. If the
+/// backend uses a callback for data delivery, that callback must call `ma_device_handle_backend_data_callback()` from within it's callback.
+/// This allows miniaudio to then process any necessary data conversion and then pass it to the miniaudio data callback.
+///
+/// If the backend requires absolute flexibility with it's data delivery, it can optionally implement the `onDeviceDataLoop()` callback
+/// which will allow it to implement the logic that will run on the audio thread. This is much more advanced and is completely optional.
+///
+/// The audio thread should run data delivery logic in a loop while `ma_device_get_state() == ma_device_state_started` and no errors have been
+/// encountered. Do not start or stop the device here. That will be handled from outside the `onDeviceDataLoop()` callback.
+///
+/// The invocation of the `onDeviceDataLoop()` callback will be handled by miniaudio. When you start the device, miniaudio will fire this
+/// callback. When the device is stopped, the `ma_device_get_state() == ma_device_state_started` condition will fail and the loop will be terminated
+/// which will then fall through to the part that stops the device. For an example on how to implement the `onDeviceDataLoop()` callback,
+/// look at `ma_device_audio_thread__default_read_write()`. Implement the `onDeviceDataLoopWakeup()` callback if you need a mechanism to
+/// wake up the audio thread.
+///
+/// If the backend supports an optimized retrieval of device information from an initialized `ma_device` object, it should implement the
+/// `onDeviceGetInfo()` callback. This is optional, in which case it will fall back to `onContextGetDeviceInfo()` which is less efficient.
 final class ma_backend_callbacks extends ffi.Struct {
   external ffi.Pointer<
       ffi.NativeFunction<
@@ -22913,6 +24701,8 @@ final class ma_backend_callbacks extends ffi.Struct {
 
 abstract class ma_result {
   static const int MA_SUCCESS = 0;
+
+  /// A generic error.
   static const int MA_ERROR = -1;
   static const int MA_INVALID_ARGS = -2;
   static const int MA_INVALID_OPERATION = -3;
@@ -22965,7 +24755,11 @@ abstract class ma_result {
   static const int MA_IN_PROGRESS = -50;
   static const int MA_CANCELLED = -51;
   static const int MA_MEMORY_ALREADY_MAPPED = -52;
+
+  /// General non-standard errors.
   static const int MA_CRC_MISMATCH = -100;
+
+  /// General miniaudio-specific errors.
   static const int MA_FORMAT_NOT_SUPPORTED = -200;
   static const int MA_DEVICE_TYPE_NOT_SUPPORTED = -201;
   static const int MA_SHARE_MODE_NOT_SUPPORTED = -202;
@@ -22975,10 +24769,14 @@ abstract class ma_result {
   static const int MA_INVALID_DEVICE_CONFIG = -206;
   static const int MA_LOOP = -207;
   static const int MA_BACKEND_NOT_ENABLED = -208;
+
+  /// State errors.
   static const int MA_DEVICE_NOT_INITIALIZED = -300;
   static const int MA_DEVICE_ALREADY_INITIALIZED = -301;
   static const int MA_DEVICE_NOT_STARTED = -302;
   static const int MA_DEVICE_NOT_STOPPED = -303;
+
+  /// Operation errors.
   static const int MA_FAILED_TO_INIT_BACKEND = -400;
   static const int MA_FAILED_TO_OPEN_BACKEND_DEVICE = -401;
   static const int MA_FAILED_TO_START_BACKEND_DEVICE = -402;
@@ -23016,8 +24814,10 @@ final class ma_log extends ffi.Struct {
   @ma_uint32()
   external int callbackCount;
 
+  /// Need to store these persistently because ma_log_postv() might need to allocate a buffer on the heap.
   external ma_allocation_callbacks allocationCallbacks;
 
+  /// For thread safety just to make it easier and safer for the logging implementation.
   external ma_mutex lock;
 }
 
@@ -23027,6 +24827,28 @@ final class ma_log_callback extends ffi.Struct {
   external ffi.Pointer<ffi.Void> pUserData;
 }
 
+/// The callback for handling log messages.
+///
+///
+/// Parameters
+/// ----------
+/// pUserData (in)
+/// The user data pointer that was passed into ma_log_register_callback().
+///
+/// logLevel (in)
+/// The log level. This can be one of the following:
+///
+/// +----------------------+
+/// | Log Level            |
+/// +----------------------+
+/// | MA_LOG_LEVEL_DEBUG   |
+/// | MA_LOG_LEVEL_INFO    |
+/// | MA_LOG_LEVEL_WARNING |
+/// | MA_LOG_LEVEL_ERROR   |
+/// +----------------------+
+///
+/// pMessage (in)
+/// The log message.
 typedef ma_log_callback_proc = ffi.Pointer<
     ffi.NativeFunction<
         ffi.Void Function(ffi.Pointer<ffi.Void> pUserData, ma_uint32 level,
@@ -23056,6 +24878,7 @@ final class ma_allocation_callbacks extends ffi.Struct {
 typedef ma_mutex = ma_handle;
 typedef ma_handle = ffi.Pointer<ffi.Void>;
 
+/// Thread priorities should be ordered such that the default priority of the worker thread is 0.
 abstract class ma_thread_priority {
   static const int ma_thread_priority_idle = -5;
   static const int ma_thread_priority_lowest = -4;
@@ -23079,6 +24902,7 @@ final class UnnamedStruct2 extends ffi.Struct {
 
   external ffi.Pointer<ffi.Char> pServerName;
 
+  /// Enables autospawning of the PulseAudio daemon if necessary.
   @ma_bool32()
   external int tryAutoSpawn;
 }
@@ -23090,21 +24914,39 @@ final class UnnamedStruct3 extends ffi.Struct {
   @ma_uint32()
   external int sessionCategoryOptions;
 
+  /// iOS only. When set to true, does not perform an explicit [[AVAudioSession sharedInstace] setActive:true] on initialization.
   @ma_bool32()
   external int noAudioSessionActivate;
 
+  /// iOS only. When set to true, does not perform an explicit [[AVAudioSession sharedInstace] setActive:false] on uninitialization.
   @ma_bool32()
   external int noAudioSessionDeactivate;
 }
 
+/// iOS/tvOS/watchOS session categories.
 abstract class ma_ios_session_category {
+  /// AVAudioSessionCategoryPlayAndRecord.
   static const int ma_ios_session_category_default = 0;
+
+  /// Leave the session category unchanged.
   static const int ma_ios_session_category_none = 1;
+
+  /// AVAudioSessionCategoryAmbient
   static const int ma_ios_session_category_ambient = 2;
+
+  /// AVAudioSessionCategorySoloAmbient
   static const int ma_ios_session_category_solo_ambient = 3;
+
+  /// AVAudioSessionCategoryPlayback
   static const int ma_ios_session_category_playback = 4;
+
+  /// AVAudioSessionCategoryRecord
   static const int ma_ios_session_category_record = 5;
+
+  /// AVAudioSessionCategoryPlayAndRecord
   static const int ma_ios_session_category_play_and_record = 6;
+
+  /// AVAudioSessionCategoryMultiRoute
   static const int ma_ios_session_category_multi_route = 7;
 }
 
@@ -23115,6 +24957,24 @@ final class UnnamedStruct4 extends ffi.Struct {
   external int tryStartServer;
 }
 
+/// The callback for handling device enumeration. This is fired from `ma_context_enumerate_devices()`.
+///
+///
+/// Parameters
+/// ----------
+/// pContext (in)
+/// A pointer to the context performing the enumeration.
+///
+/// deviceType (in)
+/// The type of the device being enumerated. This will always be either `ma_device_type_playback` or `ma_device_type_capture`.
+///
+/// pInfo (in)
+/// A pointer to a `ma_device_info` containing the ID and name of the enumerated device. Note that this will not include detailed information about the device,
+/// only basic information (ID and name). The reason for this is that it would otherwise require opening the backend device to probe for the information which
+/// is too inefficient.
+///
+/// pUserData (in)
+/// The user data pointer passed into `ma_context_enumerate_devices()`.
 typedef ma_enum_devices_callback_proc = ffi.Pointer<
     ffi.NativeFunction<
         ma_bool32 Function(
@@ -23126,13 +24986,17 @@ typedef ma_enum_devices_callback_proc = ffi.Pointer<
 abstract class ma_device_type {
   static const int ma_device_type_playback = 1;
   static const int ma_device_type_capture = 2;
+
+  /// 3
   static const int ma_device_type_duplex = 3;
   static const int ma_device_type_loopback = 4;
 }
 
 final class ma_device_info extends ffi.Struct {
+  /// Basic info. This is the only information guaranteed to be filled in during device enumeration.
   external ma_device_id id;
 
+  /// +1 for null terminator.
   @ffi.Array.multi([256])
   external ffi.Array<ffi.Char> name;
 
@@ -23142,52 +25006,68 @@ final class ma_device_info extends ffi.Struct {
   @ma_uint32()
   external int nativeDataFormatCount;
 
+  /// ma_format_count * ma_standard_sample_rate_count * MA_MAX_CHANNELS
   @ffi.Array.multi([64])
   external ffi.Array<UnnamedStruct5> nativeDataFormats;
 }
 
 final class ma_device_id extends ffi.Union {
+  /// WASAPI uses a wchar_t string for identification.
   @ffi.Array.multi([64])
   external ffi.Array<ma_wchar_win32> wasapi;
 
+  /// DirectSound uses a GUID for identification.
   @ffi.Array.multi([16])
   external ffi.Array<ma_uint8> dsound;
 
+  /// When creating a device, WinMM expects a Win32 UINT_PTR for device identification. In practice it's actually just a UINT.
   @ma_uint32()
   external int winmm;
 
+  /// ALSA uses a name string for identification.
   @ffi.Array.multi([256])
   external ffi.Array<ffi.Char> alsa;
 
+  /// PulseAudio uses a name string for identification.
   @ffi.Array.multi([256])
   external ffi.Array<ffi.Char> pulse;
 
+  /// JACK always uses default devices.
   @ffi.Int()
   external int jack;
 
+  /// Core Audio uses a string for identification.
   @ffi.Array.multi([256])
   external ffi.Array<ffi.Char> coreaudio;
 
+  /// "snd/0", etc.
   @ffi.Array.multi([256])
   external ffi.Array<ffi.Char> sndio;
 
+  /// "/dev/audio", etc.
   @ffi.Array.multi([256])
   external ffi.Array<ffi.Char> audio4;
 
+  /// "dev/dsp0", etc. "dev/dsp" for the default device.
   @ffi.Array.multi([64])
   external ffi.Array<ffi.Char> oss;
 
+  /// AAudio uses a 32-bit integer for identification.
   @ma_int32()
   external int aaudio;
 
+  /// OpenSL|ES uses a 32-bit unsigned integer for identification.
   @ma_uint32()
   external int opensl;
 
+  /// Web Audio always uses default devices for now, but if this changes it'll be a GUID.
   @ffi.Array.multi([32])
   external ffi.Array<ffi.Char> webaudio;
 
+  /// The custom backend could be anything. Give them a few options.
   external UnnamedUnion1 custom;
 
+  /// The null backend uses an integer for device IDs.
   @ffi.Int()
   external int nullbackend;
 }
@@ -23207,23 +25087,32 @@ final class UnnamedUnion1 extends ffi.Union {
 }
 
 final class UnnamedStruct5 extends ffi.Struct {
+  /// Sample format. If set to ma_format_unknown, all sample formats are supported.
   @ffi.Int32()
   external int format;
 
+  /// If set to 0, all channels are supported.
   @ma_uint32()
   external int channels;
 
+  /// If set to 0, all sample rates are supported.
   @ma_uint32()
   external int sampleRate;
 
+  /// A combination of MA_DATA_FORMAT_FLAG_* flags.
   @ma_uint32()
   external int flags;
 }
 
 abstract class ma_format {
+  /// Mainly used for indicating an error, but also used as the default for the output format for decoders.
   static const int ma_format_unknown = 0;
   static const int ma_format_u8 = 1;
+
+  /// Seems to be the most widely supported format.
   static const int ma_format_s16 = 2;
+
+  /// Tightly packed. 3 bytes per sample.
   static const int ma_format_s24 = 3;
   static const int ma_format_s32 = 4;
   static const int ma_format_f32 = 5;
@@ -23239,14 +25128,19 @@ final class ma_device extends ffi.Struct {
   @ma_uint32()
   external int sampleRate;
 
+  /// The state of the device is variable and can change at any time on any thread. Must be used atomically.
   external ma_atomic_device_state state;
 
+  /// Set once at initialization time and should not be changed after.
   external ma_device_data_proc onData;
 
+  /// Set once at initialization time and should not be changed after.
   external ma_device_notification_proc onNotification;
 
+  /// DEPRECATED. Use the notification callback instead. Set once at initialization time and should not be changed after.
   external ma_stop_proc onStop;
 
+  /// Application defined data.
   external ffi.Pointer<ffi.Void> pUserData;
 
   external ma_mutex startStopLock;
@@ -23259,9 +25153,11 @@ final class ma_device extends ffi.Struct {
 
   external ma_thread thread;
 
+  /// This is set by the worker thread after it's finished doing a job.
   @ffi.Int32()
   external int workResult;
 
+  /// When set to true, uninitializing the device will also uninitialize the context. Set to true when NULL is passed into ma_device_init().
   @ma_bool8()
   external int isOwnerOfContext;
 
@@ -23277,8 +25173,10 @@ final class ma_device extends ffi.Struct {
   @ma_bool8()
   external int noFixedSizedCallback;
 
+  /// Linear 0..1. Can be read and written simultaneously by different threads. Must be used atomically.
   external ma_atomic_float masterVolumeFactor;
 
+  /// Intermediary buffer for duplex device on asynchronous backends.
   external ma_duplex_rb duplexRB;
 
   external UnnamedStruct10 resampling;
@@ -23297,12 +25195,58 @@ final class ma_atomic_device_state extends ffi.Struct {
 
 abstract class ma_device_state {
   static const int ma_device_state_uninitialized = 0;
+
+  /// The device's default state after initialization.
   static const int ma_device_state_stopped = 1;
+
+  /// The device is started and is requesting and/or delivering audio data.
   static const int ma_device_state_started = 2;
+
+  /// Transitioning from a stopped state to started.
   static const int ma_device_state_starting = 3;
+
+  /// Transitioning from a started state to stopped.
   static const int ma_device_state_stopping = 4;
 }
 
+/// The callback for processing audio data from the device.
+///
+/// The data callback is fired by miniaudio whenever the device needs to have more data delivered to a playback device, or when a capture device has some data
+/// available. This is called as soon as the backend asks for more data which means it may be called with inconsistent frame counts. You cannot assume the
+/// callback will be fired with a consistent frame count.
+///
+///
+/// Parameters
+/// ----------
+/// pDevice (in)
+/// A pointer to the relevant device.
+///
+/// pOutput (out)
+/// A pointer to the output buffer that will receive audio data that will later be played back through the speakers. This will be non-null for a playback or
+/// full-duplex device and null for a capture and loopback device.
+///
+/// pInput (in)
+/// A pointer to the buffer containing input data from a recording device. This will be non-null for a capture, full-duplex or loopback device and null for a
+/// playback device.
+///
+/// frameCount (in)
+/// The number of PCM frames to process. Note that this will not necessarily be equal to what you requested when you initialized the device. The
+/// `periodSizeInFrames` and `periodSizeInMilliseconds` members of the device config are just hints, and are not necessarily exactly what you'll get. You must
+/// not assume this will always be the same value each time the callback is fired.
+///
+///
+/// Remarks
+/// -------
+/// You cannot stop and start the device from inside the callback or else you'll get a deadlock. You must also not uninitialize the device from inside the
+/// callback. The following APIs cannot be called from inside the callback:
+///
+/// ma_device_init()
+/// ma_device_init_ex()
+/// ma_device_uninit()
+/// ma_device_start()
+/// ma_device_stop()
+///
+/// The proper way to stop the device is to call `ma_device_stop()` from a different thread, normally the main application thread.
 typedef ma_device_data_proc = ffi.Pointer<
     ffi.NativeFunction<
         ffi.Void Function(
@@ -23310,6 +25254,45 @@ typedef ma_device_data_proc = ffi.Pointer<
             ffi.Pointer<ffi.Void> pOutput,
             ffi.Pointer<ffi.Void> pInput,
             ma_uint32 frameCount)>>;
+
+/// The notification callback for when the application should be notified of a change to the device.
+///
+/// This callback is used for notifying the application of changes such as when the device has started,
+/// stopped, rerouted or an interruption has occurred. Note that not all backends will post all
+/// notification types. For example, some backends will perform automatic stream routing without any
+/// kind of notification to the host program which means miniaudio will never know about it and will
+/// never be able to fire the rerouted notification. You should keep this in mind when designing your
+/// program.
+///
+/// The stopped notification will *not* get fired when a device is rerouted.
+///
+///
+/// Parameters
+/// ----------
+/// pNotification (in)
+/// A pointer to a structure containing information about the event. Use the `pDevice` member of
+/// this object to retrieve the relevant device. The `type` member can be used to discriminate
+/// against each of the notification types.
+///
+///
+/// Remarks
+/// -------
+/// Do not restart or uninitialize the device from the callback.
+///
+/// Not all notifications will be triggered by all backends, however the started and stopped events
+/// should be reliable for all backends. Some backends do not have a good way to detect device
+/// stoppages due to unplugging the device which may result in the stopped callback not getting
+/// fired. This has been observed with at least one BSD variant.
+///
+/// The rerouted notification is fired *after* the reroute has occurred. The stopped notification will
+/// not* get fired when a device is rerouted. The following backends are known to do automatic stream
+/// rerouting, but do not have a way to be notified of the change:
+///
+/// DirectSound
+///
+/// The interruption notifications are used on mobile platforms for detecting when audio is interrupted
+/// due to things like an incoming phone call. Currently this is only implemented on iOS. None of the
+/// Android backends will report this notification.
 typedef ma_device_notification_proc = ffi.Pointer<
     ffi.NativeFunction<
         ffi.Void Function(ffi.Pointer<ma_device_notification> pNotification)>>;
@@ -23323,6 +25306,7 @@ final class ma_device_notification extends ffi.Struct {
   external UnnamedUnion2 data;
 }
 
+/// Device notification types.
 abstract class ma_device_notification_type {
   static const int ma_device_notification_type_started = 0;
   static const int ma_device_notification_type_stopped = 1;
@@ -23361,6 +25345,23 @@ final class UnnamedStruct9 extends ffi.Struct {
   external int _unused;
 }
 
+/// DEPRECATED. Use ma_device_notification_proc instead.
+///
+/// The callback for when the device has been stopped.
+///
+/// This will be called when the device is stopped explicitly with `ma_device_stop()` and also called implicitly when the device is stopped through external forces
+/// such as being unplugged or an internal error occurring.
+///
+///
+/// Parameters
+/// ----------
+/// pDevice (in)
+/// A pointer to the device that has just stopped.
+///
+///
+/// Remarks
+/// -------
+/// Do not restart or uninitialize the device from the callback.
 typedef ma_stop_proc = ffi.Pointer<
     ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ma_device> pDevice)>>;
 typedef ma_event = ma_handle;
@@ -23372,8 +25373,17 @@ final class ma_atomic_float extends ffi.Struct {
   external double value;
 }
 
+/// These float types are not used universally by miniaudio. It's to simplify some macro expansion for atomic types.
 typedef ma_float = ffi.Float;
 
+/// The idea of the duplex ring buffer is to act as the intermediary buffer when running two asynchronous devices in a duplex set up. The
+/// capture device writes to it, and then a playback device reads from it.
+///
+/// At the moment this is just a simple naive implementation, but in the future I want to implement some dynamic resampling to seamlessly
+/// handle desyncs. Note that the API is work in progress and may change at any time in any version.
+///
+/// The size of the buffer is based on the capture side since that's what'll be written to the buffer. It is based on the capture period size
+/// in frames. The internal sample rate of the capture device is also needed in order to calculate the size.
 final class ma_duplex_rb extends ffi.Struct {
   external ma_pcm_rb rb;
 }
@@ -23389,6 +25399,7 @@ final class ma_pcm_rb extends ffi.Struct {
   @ma_uint32()
   external int channels;
 
+  /// Not required for the ring buffer itself, but useful for associating the data with some sample rate, particularly for data sources.
   @ma_uint32()
   external int sampleRate;
 }
@@ -23399,19 +25410,25 @@ final class ma_data_source_base extends ffi.Struct {
   @ma_uint64()
   external int rangeBegInFrames;
 
+  /// Set to -1 for unranged (default).
   @ma_uint64()
   external int rangeEndInFrames;
 
+  /// Relative to rangeBegInFrames.
   @ma_uint64()
   external int loopBegInFrames;
 
+  /// Relative to rangeBegInFrames. Set to -1 for the end of the range.
   @ma_uint64()
   external int loopEndInFrames;
 
+  /// When non-NULL, the data source being initialized will act as a proxy and will route all operations to pCurrent. Used in conjunction with pNext/onGetNext for seamless chaining.
   external ffi.Pointer<ma_data_source> pCurrent;
 
+  /// When set to NULL, onGetNext will be used.
   external ffi.Pointer<ma_data_source> pNext;
 
+  /// Will be used when pNext is NULL. If both are NULL, no next will be used.
   external ma_data_source_get_next_proc onGetNext;
 
   @ma_bool32()
@@ -23483,15 +25500,19 @@ final class ma_rb extends ffi.Struct {
   @ma_uint32()
   external int subbufferStrideInBytes;
 
+  /// Most significant bit is the loop flag. Lower 31 bits contains the actual offset in bytes. Must be used atomically.
   @ma_uint32()
   external int encodedReadOffset;
 
+  /// Most significant bit is the loop flag. Lower 31 bits contains the actual offset in bytes. Must be used atomically.
   @ma_uint32()
   external int encodedWriteOffset;
 
+  /// Used to know whether or not miniaudio is responsible for free()-ing the buffer.
   @ma_bool8()
   external int ownsBuffer;
 
+  /// When set, clears the acquired write buffer before returning from ma_rb_acquire_write().
   @ma_bool8()
   external int clearOnWriteAcquire;
 
@@ -23510,6 +25531,7 @@ final class UnnamedStruct10 extends ffi.Struct {
 }
 
 abstract class ma_resample_algorithm {
+  /// Fastest, lowest quality. Optional low-pass filtering. Default.
   static const int ma_resample_algorithm_linear = 0;
   static const int ma_resample_algorithm_custom = 1;
 }
@@ -23549,6 +25571,7 @@ final class ma_resampling_backend_vtable extends ffi.Struct {
               ffi.Pointer<ffi.Void> pFramesOut,
               ffi.Pointer<ma_uint64> pFrameCountOut)>> onProcess;
 
+  /// Optional. Rate changes will be disabled.
   external ffi.Pointer<
       ffi.NativeFunction<
           ffi.Int32 Function(
@@ -23557,16 +25580,19 @@ final class ma_resampling_backend_vtable extends ffi.Struct {
               ma_uint32 sampleRateIn,
               ma_uint32 sampleRateOut)>> onSetRate;
 
+  /// Optional. Latency will be reported as 0.
   external ffi.Pointer<
       ffi.NativeFunction<
           ma_uint64 Function(ffi.Pointer<ffi.Void> pUserData,
               ffi.Pointer<ma_resampling_backend> pBackend)>> onGetInputLatency;
 
+  /// Optional. Latency will be reported as 0.
   external ffi.Pointer<
       ffi.NativeFunction<
           ma_uint64 Function(ffi.Pointer<ffi.Void> pUserData,
               ffi.Pointer<ma_resampling_backend> pBackend)>> onGetOutputLatency;
 
+  /// Optional. Latency mitigation will be disabled.
   external ffi.Pointer<
           ffi.NativeFunction<
               ffi.Int32 Function(
@@ -23576,6 +25602,7 @@ final class ma_resampling_backend_vtable extends ffi.Struct {
                   ffi.Pointer<ma_uint64> pInputFrameCount)>>
       onGetRequiredInputFrameCount;
 
+  /// Optional. Latency mitigation will be disabled.
   external ffi.Pointer<
           ffi.NativeFunction<
               ffi.Int32 Function(
@@ -23592,6 +25619,7 @@ final class ma_resampling_backend_vtable extends ffi.Struct {
 }
 
 final class ma_resampler_config extends ffi.Struct {
+  /// Must be either ma_format_f32 or ma_format_s16.
   @ffi.Int32()
   external int format;
 
@@ -23604,6 +25632,7 @@ final class ma_resampler_config extends ffi.Struct {
   @ma_uint32()
   external int sampleRateOut;
 
+  /// When set to ma_resample_algorithm_custom, pBackendVTable will be used.
   @ffi.Int32()
   external int algorithm;
 
@@ -23627,13 +25656,17 @@ final class UnnamedStruct12 extends ffi.Struct {
 }
 
 final class UnnamedStruct13 extends ffi.Struct {
+  /// Set to NULL if using default ID, otherwise set to the address of "id".
   external ffi.Pointer<ma_device_id> pID;
 
+  /// If using an explicit device, will be set to a copy of the ID used for initialization. Otherwise cleared to 0.
   external ma_device_id id;
 
+  /// Maybe temporary. Likely to be replaced with a query API.
   @ffi.Array.multi([256])
   external ffi.Array<ffi.Char> name;
 
+  /// Set to whatever was passed in when the device was initialized.
   @ffi.Int32()
   external int shareMode;
 
@@ -23672,14 +25705,17 @@ final class UnnamedStruct13 extends ffi.Struct {
 
   external ma_data_converter converter;
 
+  /// For implementing fixed sized buffer callbacks. Will be null if using variable sized callbacks.
   external ffi.Pointer<ffi.Void> pIntermediaryBuffer;
 
   @ma_uint32()
   external int intermediaryBufferCap;
 
+  /// How many valid frames are sitting in the intermediary buffer.
   @ma_uint32()
   external int intermediaryBufferLen;
 
+  /// In external format. Can be null.
   external ffi.Pointer<ffi.Void> pInputCache;
 
   @ma_uint64()
@@ -23698,8 +25734,13 @@ abstract class ma_share_mode {
 }
 
 abstract class ma_channel_mix_mode {
+  /// Simple averaging based on the plane(s) the channel is sitting on.
   static const int ma_channel_mix_mode_rectangular = 0;
+
+  /// Drop excess channels; zeroed out extra channels.
   static const int ma_channel_mix_mode_simple = 1;
+
+  /// Use custom weights specified in ma_channel_converter_config.
   static const int ma_channel_mix_mode_custom_weights = 2;
   static const int ma_channel_mix_mode_default = 0;
 }
@@ -23726,6 +25767,7 @@ final class ma_data_converter extends ffi.Struct {
   @ffi.Int32()
   external int ditherMode;
 
+  /// The execution path the data converter will follow when processing.
   @ffi.Int32()
   external int executionPath;
 
@@ -23748,6 +25790,7 @@ final class ma_data_converter extends ffi.Struct {
   @ma_bool8()
   external int isPassthrough;
 
+  /// Memory management.
   @ma_bool8()
   external int _ownsHeap;
 
@@ -23761,11 +25804,22 @@ abstract class ma_dither_mode {
 }
 
 abstract class ma_data_converter_execution_path {
+  /// No conversion.
   static const int ma_data_converter_execution_path_passthrough = 0;
+
+  /// Only format conversion.
   static const int ma_data_converter_execution_path_format_only = 1;
+
+  /// Only channel conversion.
   static const int ma_data_converter_execution_path_channels_only = 2;
+
+  /// Only resampling.
   static const int ma_data_converter_execution_path_resample_only = 3;
+
+  /// All conversions, but resample as the first step.
   static const int ma_data_converter_execution_path_resample_first = 4;
+
+  /// All conversions, but channels as the first step.
   static const int ma_data_converter_execution_path_channels_first = 5;
 }
 
@@ -23789,10 +25843,13 @@ final class ma_channel_converter extends ffi.Struct {
 
   external ffi.Pointer<ma_channel> pChannelMapOut;
 
+  /// Indexed by output channel index.
   external ffi.Pointer<ma_uint8> pShuffleTable;
 
+  /// [in][out]
   external UnnamedUnion3 weights;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -23803,9 +25860,17 @@ final class ma_channel_converter extends ffi.Struct {
 abstract class ma_channel_conversion_path {
   static const int ma_channel_conversion_path_unknown = 0;
   static const int ma_channel_conversion_path_passthrough = 1;
+
+  /// Converting to mono.
   static const int ma_channel_conversion_path_mono_out = 2;
+
+  /// Converting from mono.
   static const int ma_channel_conversion_path_mono_in = 3;
+
+  /// Simple shuffle. Will use this when all channels are present in both input and output channel maps, but just in a different order.
   static const int ma_channel_conversion_path_shuffle = 4;
+
+  /// Blended based on weights.
   static const int ma_channel_conversion_path_weights = 5;
 }
 
@@ -23834,8 +25899,10 @@ final class ma_resampler extends ffi.Struct {
   @ma_uint32()
   external int sampleRateOut;
 
+  /// State for stock resamplers so we can avoid a malloc. For stock resamplers, pBackend will point here.
   external UnnamedUnion4 state;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -23861,12 +25928,15 @@ final class ma_linear_resampler extends ffi.Struct {
   @ma_uint32()
   external int inTimeFrac;
 
+  /// The previous input frame.
   external UnnamedUnion5 x0;
 
+  /// The next input frame.
   external UnnamedUnion6 x1;
 
   external ma_lpf lpf;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -23887,9 +25957,11 @@ final class ma_linear_resampler_config extends ffi.Struct {
   @ma_uint32()
   external int sampleRateOut;
 
+  /// The low-pass filter order. Setting this to 0 will disable low-pass filtering.
   @ma_uint32()
   external int lpfOrder;
 
+  /// 0..1. Defaults to 1. 1 = Half the sampling frequency (Nyquist Frequency), 0.5 = Quarter the sampling frequency (half Nyquest Frequency), etc.
   @ffi.Double()
   external double lpfNyquistFactor;
 }
@@ -23928,6 +26000,7 @@ final class ma_lpf extends ffi.Struct {
 
   external ffi.Pointer<ma_lpf2> pLPF2;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -23945,6 +26018,7 @@ final class ma_lpf1 extends ffi.Struct {
 
   external ffi.Pointer<ma_biquad_coefficient> pR1;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -23961,6 +26035,7 @@ final class ma_biquad_coefficient extends ffi.Union {
 }
 
 final class ma_lpf2 extends ffi.Struct {
+  /// The second order low-pass filter is implemented as a biquad filter.
   external ma_biquad bq;
 }
 
@@ -23985,6 +26060,7 @@ final class ma_biquad extends ffi.Struct {
 
   external ffi.Pointer<ma_biquad_coefficient> pR2;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -23992,13 +26068,17 @@ final class ma_biquad extends ffi.Struct {
 }
 
 final class UnnamedStruct14 extends ffi.Struct {
+  /// Set to NULL if using default ID, otherwise set to the address of "id".
   external ffi.Pointer<ma_device_id> pID;
 
+  /// If using an explicit device, will be set to a copy of the ID used for initialization. Otherwise cleared to 0.
   external ma_device_id id;
 
+  /// Maybe temporary. Likely to be replaced with a query API.
   @ffi.Array.multi([256])
   external ffi.Array<ffi.Char> name;
 
+  /// Set to whatever was passed in when the device was initialized.
   @ffi.Int32()
   external int shareMode;
 
@@ -24037,11 +26117,13 @@ final class UnnamedStruct14 extends ffi.Struct {
 
   external ma_data_converter converter;
 
+  /// For implementing fixed sized buffer callbacks. Will be null if using variable sized callbacks.
   external ffi.Pointer<ffi.Void> pIntermediaryBuffer;
 
   @ma_uint32()
   external int intermediaryBufferCap;
 
+  /// How many valid frames are sitting in the intermediary buffer.
   @ma_uint32()
   external int intermediaryBufferLen;
 }
@@ -24059,22 +26141,30 @@ final class UnnamedUnion7 extends ffi.Union {
 }
 
 final class UnnamedStruct15 extends ffi.Struct {
+  /// IAudioClient
   external ma_ptr pAudioClientPlayback;
 
+  /// IAudioClient
   external ma_ptr pAudioClientCapture;
 
+  /// IAudioRenderClient
   external ma_ptr pRenderClient;
 
+  /// IAudioCaptureClient
   external ma_ptr pCaptureClient;
 
+  /// Used for IMMNotificationClient notifications. Required for detecting default device changes.
   external ma_ptr pDeviceEnumerator;
 
   external ma_IMMNotificationClient notificationClient;
 
+  /// Auto reset. Initialized to signaled.
   external ma_handle hEventPlayback;
 
+  /// Auto reset. Initialized to unsignaled.
   external ma_handle hEventCapture;
 
+  /// Value from GetBufferSize(). internalPeriodSizeInFrames is not set to the _actual_ buffer size when low-latency shared mode is being used due to the way the IAudioClient3 API works.
   @ma_uint32()
   external int actualBufferSizeInFramesPlayback;
 
@@ -24115,8 +26205,10 @@ final class UnnamedStruct15 extends ffi.Struct {
   @ma_uint32()
   external int mappedBufferPlaybackLen;
 
+  /// Can be read and written simultaneously across different threads. Must be used atomically, and must be 32-bit.
   external ma_atomic_bool32 isStartedCapture;
 
+  /// Can be read and written simultaneously across different threads. Must be used atomically, and must be 32-bit.
   external ma_atomic_bool32 isStartedPlayback;
 
   @ma_uint32()
@@ -24125,9 +26217,11 @@ final class UnnamedStruct15 extends ffi.Struct {
   @ma_bool8()
   external int loopbackProcessExclude;
 
+  /// When set to true, disables the use of AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM.
   @ma_bool8()
   external int noAutoConvertSRC;
 
+  /// When set to true, disables the use of AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY.
   @ma_bool8()
   external int noDefaultQualitySRC;
 
@@ -24156,6 +26250,7 @@ final class UnnamedStruct15 extends ffi.Struct {
 
 typedef ma_ptr = ffi.Pointer<ffi.Void>;
 
+/// We need a IMMNotificationClient object for WASAPI.
 final class ma_IMMNotificationClient extends ffi.Struct {
   external ffi.Pointer<ffi.Void> lpVtbl;
 
@@ -24175,6 +26270,7 @@ final class ma_atomic_bool32 extends ffi.Struct {
   external int value;
 }
 
+/// WASAPI audio thread priority characteristics.
 abstract class ma_wasapi_usage {
   static const int ma_wasapi_usage_default = 0;
   static const int ma_wasapi_usage_games = 1;
@@ -24182,59 +26278,79 @@ abstract class ma_wasapi_usage {
 }
 
 final class UnnamedStruct16 extends ffi.Struct {
+  /// LPDIRECTSOUND
   external ma_ptr pPlayback;
 
+  /// LPDIRECTSOUNDBUFFER
   external ma_ptr pPlaybackPrimaryBuffer;
 
+  /// LPDIRECTSOUNDBUFFER
   external ma_ptr pPlaybackBuffer;
 
+  /// LPDIRECTSOUNDCAPTURE
   external ma_ptr pCapture;
 
+  /// LPDIRECTSOUNDCAPTUREBUFFER
   external ma_ptr pCaptureBuffer;
 }
 
 final class UnnamedStruct17 extends ffi.Struct {
+  /// HWAVEOUT
   external ma_handle hDevicePlayback;
 
+  /// HWAVEIN
   external ma_handle hDeviceCapture;
 
+  /// HANDLE
   external ma_handle hEventPlayback;
 
+  /// HANDLE
   external ma_handle hEventCapture;
 
   @ma_uint32()
   external int fragmentSizeInFrames;
 
+  /// [0,periods). Used as an index into pWAVEHDRPlayback.
   @ma_uint32()
   external int iNextHeaderPlayback;
 
+  /// [0,periods). Used as an index into pWAVEHDRCapture.
   @ma_uint32()
   external int iNextHeaderCapture;
 
+  /// The number of PCM frames consumed in the buffer in pWAVEHEADER[iNextHeader].
   @ma_uint32()
   external int headerFramesConsumedPlayback;
 
+  /// ^^^
   @ma_uint32()
   external int headerFramesConsumedCapture;
 
+  /// One instantiation for each period.
   external ffi.Pointer<ma_uint8> pWAVEHDRPlayback;
 
+  /// One instantiation for each period.
   external ffi.Pointer<ma_uint8> pWAVEHDRCapture;
 
   external ffi.Pointer<ma_uint8> pIntermediaryBufferPlayback;
 
   external ffi.Pointer<ma_uint8> pIntermediaryBufferCapture;
 
+  /// Used internally and is used for the heap allocated data for the intermediary buffer and the WAVEHDR structures.
   external ffi.Pointer<ma_uint8> _pHeapData;
 }
 
 final class UnnamedStruct18 extends ffi.Struct {
+  /// jack_client_t
   external ma_ptr pClient;
 
+  /// jack_port_t
   external ffi.Pointer<ma_ptr> ppPortsPlayback;
 
+  /// jack_port_t
   external ffi.Pointer<ma_ptr> ppPortsCapture;
 
+  /// Typed as a float because JACK is always floating point.
   external ffi.Pointer<ffi.Float> pIntermediaryBufferPlayback;
 
   external ffi.Pointer<ffi.Float> pIntermediaryBufferCapture;
@@ -24272,6 +26388,7 @@ final class UnnamedStruct19 extends ffi.Struct {
   @ma_uint64()
   external int lastProcessedFrameCapture;
 
+  /// Read and written by multiple threads. Must be used atomically, and must be 32-bit for compiler compatibility.
   external ma_atomic_bool32 isStarted;
 }
 
@@ -24306,15 +26423,19 @@ final class ma_device_config extends ffi.Struct {
   @ffi.Int32()
   external int performanceProfile;
 
+  /// When set to true, the contents of the output buffer passed into the data callback will be left undefined rather than initialized to silence.
   @ma_bool8()
   external int noPreSilencedOutputBuffer;
 
+  /// When set to true, the contents of the output buffer passed into the data callback will be clipped after returning. Only applies when the playback sample format is f32.
   @ma_bool8()
   external int noClip;
 
+  /// Do not disable denormals when firing the data callback.
   @ma_bool8()
   external int noDisableDenormals;
 
+  /// Disables strict fixed-sized data callbacks. Setting this to true will result in the period size being treated only as a hint to the backend. This is an optimization for those who don't need fixed sized callbacks.
   @ma_bool8()
   external int noFixedSizedCallback;
 
@@ -24359,6 +26480,7 @@ final class UnnamedStruct20 extends ffi.Struct {
   @ffi.Int32()
   external int channelMixMode;
 
+  /// When an output LFE channel is present, but no input LFE, set to true to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present.
   @ma_bool32()
   external int calculateLFEFromSpatialChannels;
 
@@ -24380,6 +26502,7 @@ final class UnnamedStruct21 extends ffi.Struct {
   @ffi.Int32()
   external int channelMixMode;
 
+  /// When an output LFE channel is present, but no input LFE, set to true to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present.
   @ma_bool32()
   external int calculateLFEFromSpatialChannels;
 
@@ -24388,38 +26511,49 @@ final class UnnamedStruct21 extends ffi.Struct {
 }
 
 final class UnnamedStruct22 extends ffi.Struct {
+  /// When configured, uses Avrt APIs to set the thread characteristics.
   @ffi.Int32()
   external int usage;
 
+  /// When set to true, disables the use of AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM.
   @ma_bool8()
   external int noAutoConvertSRC;
 
+  /// When set to true, disables the use of AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY.
   @ma_bool8()
   external int noDefaultQualitySRC;
 
+  /// Disables automatic stream routing.
   @ma_bool8()
   external int noAutoStreamRouting;
 
+  /// Disables WASAPI's hardware offloading feature.
   @ma_bool8()
   external int noHardwareOffloading;
 
+  /// The process ID to include or exclude for loopback mode. Set to 0 to capture audio from all processes. Ignored when an explicit device ID is specified.
   @ma_uint32()
   external int loopbackProcessID;
 
+  /// When set to true, excludes the process specified by loopbackProcessID. By default, the process will be included.
   @ma_bool8()
   external int loopbackProcessExclude;
 }
 
 final class UnnamedStruct23 extends ffi.Struct {
+  /// Disables MMap mode.
   @ma_bool32()
   external int noMMap;
 
+  /// Opens the ALSA device with SND_PCM_NO_AUTO_FORMAT.
   @ma_bool32()
   external int noAutoFormat;
 
+  /// Opens the ALSA device with SND_PCM_NO_AUTO_CHANNELS.
   @ma_bool32()
   external int noAutoChannels;
 
+  /// Opens the ALSA device with SND_PCM_NO_AUTO_RESAMPLE.
   @ma_bool32()
   external int noAutoResample;
 }
@@ -24431,6 +26565,7 @@ final class UnnamedStruct24 extends ffi.Struct {
 }
 
 final class UnnamedStruct25 extends ffi.Struct {
+  /// Desktop only. When enabled, allows changing of the sample rate at the operating system level.
   @ma_bool32()
   external int allowNominalSampleRateChange;
 }
@@ -24446,22 +26581,48 @@ final class UnnamedStruct26 extends ffi.Struct {
   external int enableCompatibilityWorkarounds;
 }
 
+/// OpenSL stream types.
 abstract class ma_opensl_stream_type {
+  /// Leaves the stream type unset.
   static const int ma_opensl_stream_type_default = 0;
+
+  /// SL_ANDROID_STREAM_VOICE
   static const int ma_opensl_stream_type_voice = 1;
+
+  /// SL_ANDROID_STREAM_SYSTEM
   static const int ma_opensl_stream_type_system = 2;
+
+  /// SL_ANDROID_STREAM_RING
   static const int ma_opensl_stream_type_ring = 3;
+
+  /// SL_ANDROID_STREAM_MEDIA
   static const int ma_opensl_stream_type_media = 4;
+
+  /// SL_ANDROID_STREAM_ALARM
   static const int ma_opensl_stream_type_alarm = 5;
+
+  /// SL_ANDROID_STREAM_NOTIFICATION
   static const int ma_opensl_stream_type_notification = 6;
 }
 
+/// OpenSL recording presets.
 abstract class ma_opensl_recording_preset {
+  /// Leaves the input preset unset.
   static const int ma_opensl_recording_preset_default = 0;
+
+  /// SL_ANDROID_RECORDING_PRESET_GENERIC
   static const int ma_opensl_recording_preset_generic = 1;
+
+  /// SL_ANDROID_RECORDING_PRESET_CAMCORDER
   static const int ma_opensl_recording_preset_camcorder = 2;
+
+  /// SL_ANDROID_RECORDING_PRESET_VOICE_RECOGNITION
   static const int ma_opensl_recording_preset_voice_recognition = 3;
+
+  /// SL_ANDROID_RECORDING_PRESET_VOICE_COMMUNICATION
   static const int ma_opensl_recording_preset_voice_communication = 4;
+
+  /// SL_ANDROID_RECORDING_PRESET_UNPROCESSED
   static const int ma_opensl_recording_preset_voice_unprocessed = 5;
 }
 
@@ -24485,51 +26646,117 @@ final class UnnamedStruct27 extends ffi.Struct {
   external int enableCompatibilityWorkarounds;
 }
 
+/// AAudio usage types.
 abstract class ma_aaudio_usage {
+  /// Leaves the usage type unset.
   static const int ma_aaudio_usage_default = 0;
+
+  /// AAUDIO_USAGE_MEDIA
   static const int ma_aaudio_usage_media = 1;
+
+  /// AAUDIO_USAGE_VOICE_COMMUNICATION
   static const int ma_aaudio_usage_voice_communication = 2;
+
+  /// AAUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING
   static const int ma_aaudio_usage_voice_communication_signalling = 3;
+
+  /// AAUDIO_USAGE_ALARM
   static const int ma_aaudio_usage_alarm = 4;
+
+  /// AAUDIO_USAGE_NOTIFICATION
   static const int ma_aaudio_usage_notification = 5;
+
+  /// AAUDIO_USAGE_NOTIFICATION_RINGTONE
   static const int ma_aaudio_usage_notification_ringtone = 6;
+
+  /// AAUDIO_USAGE_NOTIFICATION_EVENT
   static const int ma_aaudio_usage_notification_event = 7;
+
+  /// AAUDIO_USAGE_ASSISTANCE_ACCESSIBILITY
   static const int ma_aaudio_usage_assistance_accessibility = 8;
+
+  /// AAUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE
   static const int ma_aaudio_usage_assistance_navigation_guidance = 9;
+
+  /// AAUDIO_USAGE_ASSISTANCE_SONIFICATION
   static const int ma_aaudio_usage_assistance_sonification = 10;
+
+  /// AAUDIO_USAGE_GAME
   static const int ma_aaudio_usage_game = 11;
+
+  /// AAUDIO_USAGE_ASSISTANT
   static const int ma_aaudio_usage_assitant = 12;
+
+  /// AAUDIO_SYSTEM_USAGE_EMERGENCY
   static const int ma_aaudio_usage_emergency = 13;
+
+  /// AAUDIO_SYSTEM_USAGE_SAFETY
   static const int ma_aaudio_usage_safety = 14;
+
+  /// AAUDIO_SYSTEM_USAGE_VEHICLE_STATUS
   static const int ma_aaudio_usage_vehicle_status = 15;
+
+  /// AAUDIO_SYSTEM_USAGE_ANNOUNCEMENT
   static const int ma_aaudio_usage_announcement = 16;
 }
 
+/// AAudio content types.
 abstract class ma_aaudio_content_type {
+  /// Leaves the content type unset.
   static const int ma_aaudio_content_type_default = 0;
+
+  /// AAUDIO_CONTENT_TYPE_SPEECH
   static const int ma_aaudio_content_type_speech = 1;
+
+  /// AAUDIO_CONTENT_TYPE_MUSIC
   static const int ma_aaudio_content_type_music = 2;
+
+  /// AAUDIO_CONTENT_TYPE_MOVIE
   static const int ma_aaudio_content_type_movie = 3;
+
+  /// AAUDIO_CONTENT_TYPE_SONIFICATION
   static const int ma_aaudio_content_type_sonification = 4;
 }
 
+/// AAudio input presets.
 abstract class ma_aaudio_input_preset {
+  /// Leaves the input preset unset.
   static const int ma_aaudio_input_preset_default = 0;
+
+  /// AAUDIO_INPUT_PRESET_GENERIC
   static const int ma_aaudio_input_preset_generic = 1;
+
+  /// AAUDIO_INPUT_PRESET_CAMCORDER
   static const int ma_aaudio_input_preset_camcorder = 2;
+
+  /// AAUDIO_INPUT_PRESET_VOICE_RECOGNITION
   static const int ma_aaudio_input_preset_voice_recognition = 3;
+
+  /// AAUDIO_INPUT_PRESET_VOICE_COMMUNICATION
   static const int ma_aaudio_input_preset_voice_communication = 4;
+
+  /// AAUDIO_INPUT_PRESET_UNPROCESSED
   static const int ma_aaudio_input_preset_unprocessed = 5;
+
+  /// AAUDIO_INPUT_PRESET_VOICE_PERFORMANCE
   static const int ma_aaudio_input_preset_voice_performance = 6;
 }
 
 abstract class ma_aaudio_allowed_capture_policy {
+  /// Leaves the allowed capture policy unset.
   static const int ma_aaudio_allow_capture_default = 0;
+
+  /// AAUDIO_ALLOW_CAPTURE_BY_ALL
   static const int ma_aaudio_allow_capture_by_all = 1;
+
+  /// AAUDIO_ALLOW_CAPTURE_BY_SYSTEM
   static const int ma_aaudio_allow_capture_by_system = 2;
+
+  /// AAUDIO_ALLOW_CAPTURE_BY_NONE
   static const int ma_aaudio_allow_capture_by_none = 3;
 }
 
+/// Describes some basic details about a playback or capture device.
 final class ma_device_descriptor extends ffi.Struct {
   external ffi.Pointer<ma_device_id> pDeviceID;
 
@@ -24558,6 +26785,7 @@ final class ma_device_descriptor extends ffi.Struct {
   external int periodCount;
 }
 
+/// Backend enums must be in priority order.
 abstract class ma_backend {
   static const int ma_backend_wasapi = 0;
   static const int ma_backend_dsound = 1;
@@ -24572,7 +26800,11 @@ abstract class ma_backend {
   static const int ma_backend_aaudio = 10;
   static const int ma_backend_opensl = 11;
   static const int ma_backend_webaudio = 12;
+
+  /// <-- Custom backend, with callbacks defined by the context config.
   static const int ma_backend_custom = 13;
+
+  /// <-- Must always be the last item. Lowest priority, and used as the terminator for backend enumeration.
   static const int ma_backend_null = 14;
 }
 
@@ -24615,10 +26847,12 @@ final class UnnamedStruct28 extends ffi.Struct {
   external ma_proc ActivateAudioInterfaceAsync;
 }
 
+/// WASAPI specific structure for some commands which must run on a common thread due to bugs in WASAPI.
 final class ma_context_command__wasapi extends ffi.Struct {
   @ffi.Int()
   external int code;
 
+  /// This will be signalled when the event is complete.
   external ffi.Pointer<ma_event> pEvent;
 
   external UnnamedUnion9 data;
@@ -24645,6 +26879,7 @@ final class UnnamedStruct30 extends ffi.Struct {
 
   external ffi.Pointer<ffi.Pointer<ffi.Void>> ppAudioClientService;
 
+  /// The result from creating the audio client service.
   external ffi.Pointer<ffi.Int32> pResult;
 }
 
@@ -24761,6 +26996,7 @@ final class UnnamedUnion10 extends ffi.Union {
 }
 
 final class UnnamedStruct36 extends ffi.Struct {
+  /// HMODULE
   external ma_handle hOle32DLL;
 
   external ma_proc CoInitialize;
@@ -24777,12 +27013,14 @@ final class UnnamedStruct36 extends ffi.Struct {
 
   external ma_proc StringFromGUID2;
 
+  /// HMODULE
   external ma_handle hUser32DLL;
 
   external ma_proc GetForegroundWindow;
 
   external ma_proc GetDesktopWindow;
 
+  /// HMODULE
   external ma_handle hAdvapi32DLL;
 
   external ma_proc RegOpenKeyExA;
@@ -24791,6 +27029,7 @@ final class UnnamedStruct36 extends ffi.Struct {
 
   external ma_proc RegQueryValueExA;
 
+  /// HRESULT
   @ffi.Long()
   external int CoInitializeResult;
 }
@@ -24863,33 +27102,52 @@ abstract class ma_stream_layout {
 }
 
 abstract class ma_standard_sample_rate {
+  /// Most common
   static const int ma_standard_sample_rate_48000 = 48000;
   static const int ma_standard_sample_rate_44100 = 44100;
+
+  /// Lows
   static const int ma_standard_sample_rate_32000 = 32000;
   static const int ma_standard_sample_rate_24000 = 24000;
   static const int ma_standard_sample_rate_22050 = 22050;
+
+  /// Highs
   static const int ma_standard_sample_rate_88200 = 88200;
   static const int ma_standard_sample_rate_96000 = 96000;
   static const int ma_standard_sample_rate_176400 = 176400;
   static const int ma_standard_sample_rate_192000 = 192000;
+
+  /// Extreme lows
   static const int ma_standard_sample_rate_16000 = 16000;
   static const int ma_standard_sample_rate_11025 = 11250;
   static const int ma_standard_sample_rate_8000 = 8000;
+
+  /// Extreme highs
   static const int ma_standard_sample_rate_352800 = 352800;
   static const int ma_standard_sample_rate_384000 = 384000;
   static const int ma_standard_sample_rate_min = 8000;
   static const int ma_standard_sample_rate_max = 384000;
+
+  /// Need to maintain the count manually. Make sure this is updated if items are added to enum.
   static const int ma_standard_sample_rate_count = 14;
 }
 
 abstract class ma_standard_channel_map {
   static const int ma_standard_channel_map_microsoft = 0;
   static const int ma_standard_channel_map_alsa = 1;
+
+  /// Based off AIFF.
   static const int ma_standard_channel_map_rfc3551 = 2;
   static const int ma_standard_channel_map_flac = 3;
   static const int ma_standard_channel_map_vorbis = 4;
+
+  /// FreeBSD's sound(4).
   static const int ma_standard_channel_map_sound4 = 5;
+
+  /// www.sndio.org/tips.html
   static const int ma_standard_channel_map_sndio = 6;
+
+  /// https://webaudio.github.io/web-audio-api/#ChannelOrdering. Only 1, 2, 4 and 6 channels are defined, but can fill in the gaps with logical assumptions.
   static const int ma_standard_channel_map_webaudio = 3;
   static const int ma_standard_channel_map_default = 0;
 }
@@ -24976,6 +27234,7 @@ final class ma_lpf_config extends ffi.Struct {
   @ffi.Double()
   external double cutoffFrequency;
 
+  /// If set to 0, will be treated as a passthrough (no filtering will be applied).
   @ma_uint32()
   external int order;
 }
@@ -25012,6 +27271,7 @@ final class ma_hpf1 extends ffi.Struct {
 
   external ffi.Pointer<ma_biquad_coefficient> pR1;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -25019,6 +27279,7 @@ final class ma_hpf1 extends ffi.Struct {
 }
 
 final class ma_hpf2 extends ffi.Struct {
+  /// The second order high-pass filter is implemented as a biquad filter.
   external ma_biquad bq;
 }
 
@@ -25035,6 +27296,7 @@ final class ma_hpf_config extends ffi.Struct {
   @ffi.Double()
   external double cutoffFrequency;
 
+  /// If set to 0, will be treated as a passthrough (no filtering will be applied).
   @ma_uint32()
   external int order;
 }
@@ -25059,6 +27321,7 @@ final class ma_hpf extends ffi.Struct {
 
   external ffi.Pointer<ma_hpf2> pHPF2;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -25084,6 +27347,7 @@ final class ma_bpf2_config extends ffi.Struct {
 }
 
 final class ma_bpf2 extends ffi.Struct {
+  /// The second order band-pass filter is implemented as a biquad filter.
   external ma_biquad bq;
 }
 
@@ -25100,6 +27364,7 @@ final class ma_bpf_config extends ffi.Struct {
   @ffi.Double()
   external double cutoffFrequency;
 
+  /// If set to 0, will be treated as a passthrough (no filtering will be applied).
   @ma_uint32()
   external int order;
 }
@@ -25116,6 +27381,7 @@ final class ma_bpf extends ffi.Struct {
 
   external ffi.Pointer<ma_bpf2> pBPF2;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -25219,6 +27485,7 @@ final class ma_hishelf2 extends ffi.Struct {
   external ma_biquad bq;
 }
 
+/// Delay
 final class ma_delay_config extends ffi.Struct {
   @ma_uint32()
   external int channels;
@@ -25229,15 +27496,19 @@ final class ma_delay_config extends ffi.Struct {
   @ma_uint32()
   external int delayInFrames;
 
+  /// Set to true to delay the start of the output; false otherwise.
   @ma_bool32()
   external int delayStart;
 
+  /// 0..1. Default = 1.
   @ffi.Float()
   external double wet;
 
+  /// 0..1. Default = 1.
   @ffi.Float()
   external double dry;
 
+  /// 0..1. Default = 0 (no feedback). Feedback decay. Use this for echo.
   @ffi.Float()
   external double decay;
 }
@@ -25245,6 +27516,7 @@ final class ma_delay_config extends ffi.Struct {
 final class ma_delay extends ffi.Struct {
   external ma_delay_config config;
 
+  /// Feedback is written to this cursor. Always equal or in front of the read cursor.
   @ma_uint32()
   external int cursor;
 
@@ -25254,6 +27526,7 @@ final class ma_delay extends ffi.Struct {
   external ffi.Pointer<ffi.Float> pBuffer;
 }
 
+/// Gainer for smooth volume changes.
 final class ma_gainer_config extends ffi.Struct {
   @ma_uint32()
   external int channels;
@@ -25275,14 +27548,19 @@ final class ma_gainer extends ffi.Struct {
 
   external ffi.Pointer<ffi.Float> pNewGains;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
   external int _ownsHeap;
 }
 
+/// Stereo panner.
 abstract class ma_pan_mode {
+  /// Does not blend one side with the other. Technically just a balance. Compatible with other popular audio engines and therefore the default.
   static const int ma_pan_mode_balance = 0;
+
+  /// A true pan. The sound from one side will "move" to the other side and blend with it.
   static const int ma_pan_mode_pan = 1;
 }
 
@@ -25310,10 +27588,12 @@ final class ma_panner extends ffi.Struct {
   @ffi.Int32()
   external int mode;
 
+  /// -1..1 where 0 is no pan, -1 is left side, +1 is right side. Defaults to 0.
   @ffi.Float()
   external double pan;
 }
 
+/// Fader.
 final class ma_fader_config extends ffi.Struct {
   @ffi.Int32()
   external int format;
@@ -25328,19 +27608,23 @@ final class ma_fader_config extends ffi.Struct {
 final class ma_fader extends ffi.Struct {
   external ma_fader_config config;
 
+  /// If volumeBeg and volumeEnd is equal to 1, no fading happens (ma_fader_process_pcm_frames() will run as a passthrough).
   @ffi.Float()
   external double volumeBeg;
 
   @ffi.Float()
   external double volumeEnd;
 
+  /// The total length of the fade.
   @ma_uint64()
   external int lengthInFrames;
 
+  /// The current time in frames. Incremented by ma_fader_process_pcm_frames(). Signed because it'll be offset by startOffsetInFrames in set_fade_ex().
   @ma_int64()
   external int cursorInFrames;
 }
 
+/// Spatializer.
 final class ma_vec3f extends ffi.Struct {
   @ffi.Float()
   external double x;
@@ -25359,12 +27643,20 @@ final class ma_atomic_vec3f extends ffi.Struct {
   external int lock;
 }
 
+/// Spinlocks are 32-bit for compatibility reasons.
 typedef ma_spinlock = ma_uint32;
 
 abstract class ma_attenuation_model {
+  /// No distance attenuation and no spatialization.
   static const int ma_attenuation_model_none = 0;
+
+  /// Equivalent to OpenAL's AL_INVERSE_DISTANCE_CLAMPED.
   static const int ma_attenuation_model_inverse = 1;
+
+  /// Linear attenuation. Equivalent to OpenAL's AL_LINEAR_DISTANCE_CLAMPED.
   static const int ma_attenuation_model_linear = 2;
+
+  /// Exponential attenuation. Equivalent to OpenAL's AL_EXPONENT_DISTANCE_CLAMPED.
   static const int ma_attenuation_model_exponential = 3;
 }
 
@@ -25384,6 +27676,7 @@ final class ma_spatializer_listener_config extends ffi.Struct {
 
   external ffi.Pointer<ma_channel> pChannelMapOut;
 
+  /// Defaults to right. Forward is -1 on the Z axis. In a left handed system, forward is +1 on the Z axis.
   @ffi.Int32()
   external int handedness;
 
@@ -25405,8 +27698,10 @@ final class ma_spatializer_listener_config extends ffi.Struct {
 final class ma_spatializer_listener extends ffi.Struct {
   external ma_spatializer_listener_config config;
 
+  /// The absolute position of the listener.
   external ma_atomic_vec3f position;
 
+  /// The direction the listener is facing. The world up vector is config.worldUp.
   external ma_atomic_vec3f direction;
 
   external ma_atomic_vec3f velocity;
@@ -25414,6 +27709,7 @@ final class ma_spatializer_listener extends ffi.Struct {
   @ma_bool32()
   external int isEnabled;
 
+  /// Memory management.
   @ma_bool32()
   external int _ownsHeap;
 
@@ -25435,6 +27731,7 @@ final class ma_spatializer_config extends ffi.Struct {
   @ffi.Int32()
   external int positioning;
 
+  /// Defaults to right. Forward is -1 on the Z axis. In a left handed system, forward is +1 on the Z axis.
   @ffi.Int32()
   external int handedness;
 
@@ -25462,15 +27759,19 @@ final class ma_spatializer_config extends ffi.Struct {
   @ffi.Float()
   external double coneOuterGain;
 
+  /// Set to 0 to disable doppler effect.
   @ffi.Float()
   external double dopplerFactor;
 
+  /// Set to 0 to disable directional attenuation.
   @ffi.Float()
   external double directionalAttenuationFactor;
 
+  /// The minimal scaling factor to apply to channel gains when accounting for the direction of the sound relative to the listener. Must be in the range of 0..1. Smaller values means more aggressive directional panning, larger values means more subtle directional panning.
   @ffi.Float()
   external double minSpatializationChannelGain;
 
+  /// When the gain of a channel changes during spatialization, the transition will be linearly interpolated over this number of frames.
   @ma_uint32()
   external int gainSmoothTimeInFrames;
 }
@@ -25490,6 +27791,7 @@ final class ma_spatializer extends ffi.Struct {
   @ffi.Int32()
   external int positioning;
 
+  /// Defaults to right. Forward is -1 on the Z axis. In a left handed system, forward is +1 on the Z axis.
   @ffi.Int32()
   external int handedness;
 
@@ -25517,12 +27819,15 @@ final class ma_spatializer extends ffi.Struct {
   @ffi.Float()
   external double coneOuterGain;
 
+  /// Set to 0 to disable doppler effect.
   @ffi.Float()
   external double dopplerFactor;
 
+  /// Set to 0 to disable directional attenuation.
   @ffi.Float()
   external double directionalAttenuationFactor;
 
+  /// When the gain of a channel changes during spatialization, the transition will be linearly interpolated over this number of frames.
   @ma_uint32()
   external int gainSmoothTimeInFrames;
 
@@ -25530,18 +27835,23 @@ final class ma_spatializer extends ffi.Struct {
 
   external ma_atomic_vec3f direction;
 
+  /// For doppler effect.
   external ma_atomic_vec3f velocity;
 
+  /// Will be updated by ma_spatializer_process_pcm_frames() and can be used by higher level functions to apply a pitch shift for doppler effect.
   @ffi.Float()
   external double dopplerPitch;
 
   @ffi.Float()
   external double minSpatializationChannelGain;
 
+  /// For smooth gain transitions.
   external ma_gainer gainer;
 
+  /// An offset of _pHeap. Used by ma_spatializer_process_pcm_frames() to store new channel gains. The number of elements in this array is equal to config.channelsOut.
   external ffi.Pointer<ffi.Float> pNewChannelGainsOut;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -25549,8 +27859,13 @@ final class ma_spatializer extends ffi.Struct {
 }
 
 abstract class ma_mono_expansion_mode {
+  /// The default.
   static const int ma_mono_expansion_mode_duplicate = 0;
+
+  /// Average the mono channel across all channels.
   static const int ma_mono_expansion_mode_average = 1;
+
+  /// Duplicate to the left and right channels only and ignore the others.
   static const int ma_mono_expansion_mode_stereo_only = 2;
   static const int ma_mono_expansion_mode_default = 0;
 }
@@ -25572,9 +27887,11 @@ final class ma_channel_converter_config extends ffi.Struct {
   @ffi.Int32()
   external int mixingMode;
 
+  /// When an output LFE channel is present, but no input LFE, set to true to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present.
   @ma_bool32()
   external int calculateLFEFromSpatialChannels;
 
+  /// [in][out]. Only used when mixingMode is set to ma_channel_mix_mode_custom_weights.
   external ffi.Pointer<ffi.Pointer<ffi.Float>> ppWeights;
 }
 
@@ -25608,9 +27925,11 @@ final class ma_data_converter_config extends ffi.Struct {
   @ffi.Int32()
   external int channelMixMode;
 
+  /// When an output LFE channel is present, but no input LFE, set to true to set the output LFE to the average of all spatial channels (LR, FR, etc.). Ignored when an input LFE is present.
   @ma_bool32()
   external int calculateLFEFromSpatialChannels;
 
+  /// [in][out]. Only used when mixingMode is set to ma_channel_mix_mode_custom_weights.
   external ffi.Pointer<ffi.Pointer<ffi.Float>> ppChannelWeights;
 
   @ma_bool32()
@@ -25657,6 +27976,7 @@ final class ma_audio_buffer_config extends ffi.Struct {
   @ma_uint64()
   external int sizeInFrames;
 
+  /// If set to NULL, will allocate a block of memory for you.
   external ffi.Pointer<ffi.Void> pData;
 
   external ma_allocation_callbacks allocationCallbacks;
@@ -25667,9 +27987,11 @@ final class ma_audio_buffer extends ffi.Struct {
 
   external ma_allocation_callbacks allocationCallbacks;
 
+  /// Used to control whether or not miniaudio owns the data buffer. If set to true, pData will be freed in ma_audio_buffer_uninit().
   @ma_bool32()
   external int ownsData;
 
+  /// For allocating a buffer with the memory located directly after the other memory of the structure.
   @ffi.Array.multi([1])
   external ffi.Array<ma_uint8> _pExtraData;
 }
@@ -25691,22 +28013,27 @@ final class ma_paged_audio_buffer_data extends ffi.Struct {
   @ma_uint32()
   external int channels;
 
+  /// Dummy head for the lock-free algorithm. Always has a size of 0.
   external ma_paged_audio_buffer_page head;
 
+  /// Never null. Initially set to &head.
   external ffi.Pointer<ma_paged_audio_buffer_page> pTail;
 }
 
 final class ma_paged_audio_buffer_config extends ffi.Struct {
+  /// Must not be null.
   external ffi.Pointer<ma_paged_audio_buffer_data> pData;
 }
 
 final class ma_paged_audio_buffer extends ffi.Struct {
   external ma_data_source_base ds;
 
+  /// Audio data is read from here. Cannot be null.
   external ffi.Pointer<ma_paged_audio_buffer_data> pData;
 
   external ffi.Pointer<ma_paged_audio_buffer_page> pCurrent;
 
+  /// Relative to the current page.
   @ma_uint64()
   external int relativeCursor;
 
@@ -25714,6 +28041,18 @@ final class ma_paged_audio_buffer extends ffi.Struct {
   external int absoluteCursor;
 }
 
+/// Fence
+/// =====
+/// This locks while the counter is larger than 0. Counter can be incremented and decremented by any
+/// thread, but care needs to be taken when waiting. It is possible for one thread to acquire the
+/// fence just as another thread returns from ma_fence_wait().
+///
+/// The idea behind a fence is to allow you to wait for a group of operations to complete. When an
+/// operation starts, the counter is incremented which locks the fence. When the operation completes,
+/// the fence will be released which decrements the counter. ma_fence_wait() will block until the
+/// counter hits zero.
+///
+/// If threading is disabled, ma_fence_wait() will spin on the counter.
 final class ma_fence extends ffi.Struct {
   external ma_event e;
 
@@ -25728,8 +28067,12 @@ final class ma_async_notification_callbacks extends ffi.Struct {
               ffi.Pointer<ma_async_notification> pNotification)>> onSignal;
 }
 
+/// Notification callback for asynchronous operations.
 typedef ma_async_notification = ffi.Void;
 
+/// Simple polling notification.
+///
+/// This just sets a variable when the notification has been signalled which is then polled with ma_async_notification_poll_is_signalled()
 final class ma_async_notification_poll extends ffi.Struct {
   external ma_async_notification_callbacks cb;
 
@@ -25737,34 +28080,56 @@ final class ma_async_notification_poll extends ffi.Struct {
   external int signalled;
 }
 
+/// Event Notification
+///
+/// This uses an ma_event. If threading is disabled (MA_NO_THREADING), initialization will fail.
 final class ma_async_notification_event extends ffi.Struct {
   external ma_async_notification_callbacks cb;
 
   external ma_event e;
 }
 
-/// Job Queue
+/// Slot Allocator
+/// --------------
+/// The idea of the slot allocator is for it to be used in conjunction with a fixed sized buffer. You use the slot allocator to allocator an index that can be used
+/// as the insertion point for an object.
+///
+/// Slots are reference counted to help mitigate the ABA problem in the lock-free queue we use for tracking jobs.
+///
+/// The slot index is stored in the low 32 bits. The reference counter is stored in the high 32 bits:
+///
+/// +-----------------+-----------------+
+/// | 32 Bits         | 32 Bits         |
+/// +-----------------+-----------------+
+/// | Reference Count | Slot Index      |
+/// +-----------------+-----------------+
 final class ma_slot_allocator_config extends ffi.Struct {
+  /// The number of slots to make available.
   @ma_uint32()
   external int capacity;
 }
 
 final class ma_slot_allocator_group extends ffi.Struct {
+  /// Must be used atomically because the allocation and freeing routines need to make copies of this which must never be optimized away by the compiler.
   @ma_uint32()
   external int bitfield;
 }
 
 final class ma_slot_allocator extends ffi.Struct {
+  /// Slots are grouped in chunks of 32.
   external ffi.Pointer<ma_slot_allocator_group> pGroups;
 
+  /// 32 bits for reference counting for ABA mitigation.
   external ffi.Pointer<ma_uint32> pSlots;
 
+  /// Allocation count.
   @ma_uint32()
   external int count;
 
   @ma_uint32()
   external int capacity;
 
+  /// Memory management.
   @ma_bool32()
   external int _ownsHeap;
 
@@ -25772,11 +28137,14 @@ final class ma_slot_allocator extends ffi.Struct {
 }
 
 final class ma_job extends ffi.Struct {
+  /// 8 bytes. We encode the job code into the slot allocation data to save space.
   external UnnamedUnion11 toc;
 
+  /// refcount + slot for the next item. Does not include the job code.
   @ma_uint64()
   external int next;
 
+  /// Execution order. Used to create a data dependency and ensure a job is executed in order. Usage is contextual depending on the job type.
   @ma_uint32()
   external int order;
 
@@ -25791,9 +28159,11 @@ final class UnnamedUnion11 extends ffi.Union {
 }
 
 final class UnnamedStruct37 extends ffi.Struct {
+  /// Job type.
   @ma_uint16()
   external int code;
 
+  /// Index into a ma_slot_allocator.
   @ma_uint16()
   external int slot;
 
@@ -25811,6 +28181,7 @@ final class UnnamedUnion12 extends ffi.Union {
   external UnnamedUnion14 device;
 }
 
+/// Miscellaneous.
 final class UnnamedStruct38 extends ffi.Struct {
   external ma_job_proc proc;
 
@@ -25821,10 +28192,13 @@ final class UnnamedStruct38 extends ffi.Struct {
   external int data1;
 }
 
+/// Callback for processing a job. Each job type will have their own processing callback which will be
+/// called by ma_job_process().
 typedef ma_job_proc = ffi
     .Pointer<ffi.NativeFunction<ffi.Int32 Function(ffi.Pointer<ma_job> pJob)>>;
 typedef ma_uintptr = ma_uint64;
 
+/// Resource Manager
 final class UnnamedUnion13 extends ffi.Union {
   external UnnamedStruct39 loadDataBufferNode;
 
@@ -25846,29 +28220,38 @@ final class UnnamedUnion13 extends ffi.Union {
 }
 
 final class UnnamedStruct39 extends ffi.Struct {
+  /// ma_resource_manager
   external ffi.Pointer<ffi.Void> pResourceManager;
 
+  /// ma_resource_manager_data_buffer_node
   external ffi.Pointer<ffi.Void> pDataBufferNode;
 
   external ffi.Pointer<ffi.Char> pFilePath;
 
   external ffi.Pointer<ffi.WChar> pFilePathW;
 
+  /// Resource manager data source flags that were used when initializing the data buffer.
   @ma_uint32()
   external int flags;
 
+  /// Signalled when the data buffer has been initialized and the format/channels/rate can be retrieved.
   external ffi.Pointer<ma_async_notification> pInitNotification;
 
+  /// Signalled when the data buffer has been fully decoded. Will be passed through to MA_JOB_TYPE_RESOURCE_MANAGER_PAGE_DATA_BUFFER_NODE when decoding.
   external ffi.Pointer<ma_async_notification> pDoneNotification;
 
+  /// Released when initialization of the decoder is complete.
   external ffi.Pointer<ma_fence> pInitFence;
 
+  /// Released if initialization of the decoder fails. Passed through to PAGE_DATA_BUFFER_NODE untouched if init is successful.
   external ffi.Pointer<ma_fence> pDoneFence;
 }
 
 final class UnnamedStruct40 extends ffi.Struct {
+  /// ma_resource_manager
   external ffi.Pointer<ffi.Void> pResourceManager;
 
+  /// ma_resource_manager_data_buffer_node
   external ffi.Pointer<ffi.Void> pDataBufferNode;
 
   external ffi.Pointer<ma_async_notification> pDoneNotification;
@@ -25877,26 +28260,36 @@ final class UnnamedStruct40 extends ffi.Struct {
 }
 
 final class UnnamedStruct41 extends ffi.Struct {
+  /// ma_resource_manager
   external ffi.Pointer<ffi.Void> pResourceManager;
 
+  /// ma_resource_manager_data_buffer_node
   external ffi.Pointer<ffi.Void> pDataBufferNode;
 
+  /// ma_decoder
   external ffi.Pointer<ffi.Void> pDecoder;
 
+  /// Signalled when the data buffer has been fully decoded.
   external ffi.Pointer<ma_async_notification> pDoneNotification;
 
+  /// Passed through from LOAD_DATA_BUFFER_NODE and released when the data buffer completes decoding or an error occurs.
   external ffi.Pointer<ma_fence> pDoneFence;
 }
 
 final class UnnamedStruct42 extends ffi.Struct {
+  /// ma_resource_manager_data_buffer
   external ffi.Pointer<ffi.Void> pDataBuffer;
 
+  /// Signalled when the data buffer has been initialized and the format/channels/rate can be retrieved.
   external ffi.Pointer<ma_async_notification> pInitNotification;
 
+  /// Signalled when the data buffer has been fully decoded.
   external ffi.Pointer<ma_async_notification> pDoneNotification;
 
+  /// Released when the data buffer has been initialized and the format/channels/rate can be retrieved.
   external ffi.Pointer<ma_fence> pInitFence;
 
+  /// Released when the data buffer has been fully decoded.
   external ffi.Pointer<ma_fence> pDoneFence;
 
   @ma_uint64()
@@ -25916,6 +28309,7 @@ final class UnnamedStruct42 extends ffi.Struct {
 }
 
 final class UnnamedStruct43 extends ffi.Struct {
+  /// ma_resource_manager_data_buffer
   external ffi.Pointer<ffi.Void> pDataBuffer;
 
   external ffi.Pointer<ma_async_notification> pDoneNotification;
@@ -25924,21 +28318,26 @@ final class UnnamedStruct43 extends ffi.Struct {
 }
 
 final class UnnamedStruct44 extends ffi.Struct {
+  /// ma_resource_manager_data_stream
   external ffi.Pointer<ffi.Void> pDataStream;
 
+  /// Allocated when the job is posted, freed by the job thread after loading.
   external ffi.Pointer<ffi.Char> pFilePath;
 
+  /// ^ As above ^. Only used if pFilePath is NULL.
   external ffi.Pointer<ffi.WChar> pFilePathW;
 
   @ma_uint64()
   external int initialSeekPoint;
 
+  /// Signalled after the first two pages have been decoded and frames can be read from the stream.
   external ffi.Pointer<ma_async_notification> pInitNotification;
 
   external ffi.Pointer<ma_fence> pInitFence;
 }
 
 final class UnnamedStruct45 extends ffi.Struct {
+  /// ma_resource_manager_data_stream
   external ffi.Pointer<ffi.Void> pDataStream;
 
   external ffi.Pointer<ma_async_notification> pDoneNotification;
@@ -25947,19 +28346,23 @@ final class UnnamedStruct45 extends ffi.Struct {
 }
 
 final class UnnamedStruct46 extends ffi.Struct {
+  /// ma_resource_manager_data_stream
   external ffi.Pointer<ffi.Void> pDataStream;
 
+  /// The index of the page to decode into.
   @ma_uint32()
   external int pageIndex;
 }
 
 final class UnnamedStruct47 extends ffi.Struct {
+  /// ma_resource_manager_data_stream
   external ffi.Pointer<ffi.Void> pDataStream;
 
   @ma_uint64()
   external int frameIndex;
 }
 
+/// Device.
 final class UnnamedUnion14 extends ffi.Union {
   external UnnamedUnion15 aaudio;
 }
@@ -25969,15 +28372,21 @@ final class UnnamedUnion15 extends ffi.Union {
 }
 
 final class UnnamedStruct48 extends ffi.Struct {
+  /// ma_device
   external ffi.Pointer<ffi.Void> pDevice;
 
+  /// ma_device_type
   @ma_uint32()
   external int deviceType;
 }
 
+/// When a job type is added here an callback needs to be added go "g_jobVTable" in the implementation section.
 abstract class ma_job_type {
+  /// Miscellaneous.
   static const int MA_JOB_TYPE_QUIT = 0;
   static const int MA_JOB_TYPE_CUSTOM = 1;
+
+  /// Resource Manager.
   static const int MA_JOB_TYPE_RESOURCE_MANAGER_LOAD_DATA_BUFFER_NODE = 2;
   static const int MA_JOB_TYPE_RESOURCE_MANAGER_FREE_DATA_BUFFER_NODE = 3;
   static const int MA_JOB_TYPE_RESOURCE_MANAGER_PAGE_DATA_BUFFER_NODE = 4;
@@ -25987,10 +28396,18 @@ abstract class ma_job_type {
   static const int MA_JOB_TYPE_RESOURCE_MANAGER_FREE_DATA_STREAM = 8;
   static const int MA_JOB_TYPE_RESOURCE_MANAGER_PAGE_DATA_STREAM = 9;
   static const int MA_JOB_TYPE_RESOURCE_MANAGER_SEEK_DATA_STREAM = 10;
+
+  /// Device.
   static const int MA_JOB_TYPE_DEVICE_AAUDIO_REROUTE = 11;
+
+  /// Count. Must always be last.
   static const int MA_JOB_TYPE_COUNT = 12;
 }
 
+/// When set, ma_job_queue_next() will not wait and no semaphore will be signaled in
+/// ma_job_queue_post(). ma_job_queue_next() will return MA_NO_DATA_AVAILABLE if nothing is available.
+///
+/// This flag should always be used for platforms that do not support multithreading.
 abstract class ma_job_queue_flags {
   static const int MA_JOB_QUEUE_FLAG_NON_BLOCKING = 1;
 }
@@ -25999,23 +28416,29 @@ final class ma_job_queue_config extends ffi.Struct {
   @ma_uint32()
   external int flags;
 
+  /// The maximum number of jobs that can fit in the queue at a time.
   @ma_uint32()
   external int capacity;
 }
 
 final class ma_job_queue extends ffi.Struct {
+  /// Flags passed in at initialization time.
   @ma_uint32()
   external int flags;
 
+  /// The maximum number of jobs that can fit in the queue at a time. Set by the config.
   @ma_uint32()
   external int capacity;
 
+  /// The first item in the list. Required for removing from the top of the list.
   @ma_uint64()
   external int head;
 
+  /// The last item in the list. Required for appending to the end of the list.
   @ma_uint64()
   external int tail;
 
+  /// Only used when MA_JOB_QUEUE_FLAG_NON_BLOCKING is unset.
   external ma_semaphore sem;
 
   external ma_slot_allocator allocator;
@@ -26025,13 +28448,20 @@ final class ma_job_queue extends ffi.Struct {
   @ma_spinlock()
   external int lock;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
   external int _ownsHeap;
 }
 
+/// Device job thread. This is used by backends that require asynchronous processing of certain
+/// operations. It is not used by all backends.
+///
+/// The device job thread is made up of a thread and a job queue. You can post a job to the thread with
+/// ma_device_job_thread_post(). The thread will do the processing of the job.
 final class ma_device_job_thread_config extends ffi.Struct {
+  /// Set this to true if you want to process jobs yourself.
   @ma_bool32()
   external int noThread;
 
@@ -26051,15 +28481,29 @@ final class ma_device_job_thread extends ffi.Struct {
   external int _hasThread;
 }
 
+/// iOS/tvOS/watchOS session category options
 abstract class ma_ios_session_category_option {
+  /// AVAudioSessionCategoryOptionMixWithOthers
   static const int ma_ios_session_category_option_mix_with_others = 1;
+
+  /// AVAudioSessionCategoryOptionDuckOthers
   static const int ma_ios_session_category_option_duck_others = 2;
+
+  /// AVAudioSessionCategoryOptionAllowBluetooth
   static const int ma_ios_session_category_option_allow_bluetooth = 4;
+
+  /// AVAudioSessionCategoryOptionDefaultToSpeaker
   static const int ma_ios_session_category_option_default_to_speaker = 8;
+
+  /// AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers
   static const int
       ma_ios_session_category_option_interrupt_spoken_audio_and_mix_with_others =
       17;
+
+  /// AVAudioSessionCategoryOptionAllowBluetoothA2DP
   static const int ma_ios_session_category_option_allow_bluetooth_a2dp = 32;
+
+  /// AVAudioSessionCategoryOptionAllowAirPlay
   static const int ma_ios_session_category_option_allow_air_play = 64;
 }
 
@@ -26071,6 +28515,8 @@ abstract class ma_open_mode_flags {
 abstract class ma_seek_origin {
   static const int ma_seek_origin_start = 0;
   static const int ma_seek_origin_current = 1;
+
+  /// Not used by decoders.
   static const int ma_seek_origin_end = 2;
 }
 
@@ -26146,6 +28592,7 @@ typedef ma_vfs_file = ma_handle;
 final class ma_default_vfs extends ffi.Struct {
   external ma_vfs_callbacks cb;
 
+  /// Only used for the wchar_t version of open() on non-Windows platforms.
   external ma_allocation_callbacks allocationCallbacks;
 }
 
@@ -26160,8 +28607,10 @@ abstract class ma_encoding_format {
 final class ma_decoder extends ffi.Struct {
   external ma_data_source_base ds;
 
+  /// The decoding backend we'll be pulling data from.
   external ffi.Pointer<ma_data_source> pBackend;
 
+  /// The vtable for the decoding backend. This needs to be stored so we can access the onUninit() callback.
   external ffi.Pointer<ma_decoding_backend_vtable> pBackendVTable;
 
   external ffi.Pointer<ffi.Void> pBackendUserData;
@@ -26174,6 +28623,7 @@ final class ma_decoder extends ffi.Struct {
 
   external ffi.Pointer<ffi.Void> pUserData;
 
+  /// In output sample rate. Used for keeping track of how many frames are available for decoding.
   @ma_uint64()
   external int readPointerInPCMFrames;
 
@@ -26186,16 +28636,21 @@ final class ma_decoder extends ffi.Struct {
   @ma_uint32()
   external int outputSampleRate;
 
+  /// Data conversion is achieved by running frames through this.
   external ma_data_converter converter;
 
+  /// In input format. Can be null if it's not needed.
   external ffi.Pointer<ffi.Void> pInputCache;
 
+  /// The capacity of the input cache.
   @ma_uint64()
   external int inputCacheCap;
 
+  /// The number of frames that have been consumed in the cache. Used for determining the next valid frame.
   @ma_uint64()
   external int inputCacheConsumed;
 
+  /// The number of valid frames remaining in the cahce.
   @ma_uint64()
   external int inputCacheRemaining;
 
@@ -26217,6 +28672,7 @@ final class ma_decoding_backend_vtable extends ffi.Struct {
               ffi.Pointer<ma_allocation_callbacks> pAllocationCallbacks,
               ffi.Pointer<ffi.Pointer<ma_data_source>> ppBackend)>> onInit;
 
+  /// Optional.
   external ffi.Pointer<
       ffi.NativeFunction<
           ffi.Int32 Function(
@@ -26226,6 +28682,7 @@ final class ma_decoding_backend_vtable extends ffi.Struct {
               ffi.Pointer<ma_allocation_callbacks> pAllocationCallbacks,
               ffi.Pointer<ffi.Pointer<ma_data_source>> ppBackend)>> onInitFile;
 
+  /// Optional.
   external ffi.Pointer<
       ffi.NativeFunction<
           ffi.Int32 Function(
@@ -26235,6 +28692,7 @@ final class ma_decoding_backend_vtable extends ffi.Struct {
               ffi.Pointer<ma_allocation_callbacks> pAllocationCallbacks,
               ffi.Pointer<ffi.Pointer<ma_data_source>> ppBackend)>> onInitFileW;
 
+  /// Optional.
   external ffi.Pointer<
           ffi.NativeFunction<
               ffi.Int32 Function(
@@ -26275,6 +28733,7 @@ final class ma_decoding_backend_config extends ffi.Struct {
   @ffi.Int32()
   external int preferredFormat;
 
+  /// Set to > 0 to generate a seektable if the decoding backend supports it.
   @ma_uint32()
   external int seekPointCount;
 }
@@ -26298,6 +28757,7 @@ typedef ma_decoder_tell_proc = ffi.Pointer<
 final class UnnamedUnion16 extends ffi.Union {
   external UnnamedStruct49 vfs;
 
+  /// Only used for decoders that were opened against a block of memory.
   external UnnamedStruct50 memory;
 }
 
@@ -26318,12 +28778,15 @@ final class UnnamedStruct50 extends ffi.Struct {
 }
 
 final class ma_decoder_config extends ffi.Struct {
+  /// Set to 0 or ma_format_unknown to use the stream's internal format.
   @ffi.Int32()
   external int format;
 
+  /// Set to 0 to use the stream's internal channels.
   @ma_uint32()
   external int channels;
 
+  /// Set to 0 to use the stream's internal sample rate.
   @ma_uint32()
   external int sampleRate;
 
@@ -26342,6 +28805,7 @@ final class ma_decoder_config extends ffi.Struct {
   @ffi.Int32()
   external int encodingFormat;
 
+  /// When set to > 0, specifies the number of seek points to use for the generation of a seek table. Not all decoding backends support this.
   @ma_uint32()
   external int seekPointCount;
 
@@ -26523,6 +28987,7 @@ final class ma_noise extends ffi.Struct {
 
   external UnnamedUnion18 state;
 
+  /// Memory management.
   external ffi.Pointer<ffi.Void> _pHeap;
 
   @ma_bool32()
@@ -26550,18 +29015,24 @@ final class UnnamedStruct53 extends ffi.Struct {
 final class ma_resource_manager extends ffi.Struct {
   external ma_resource_manager_config config;
 
+  /// The root buffer in the binary tree.
   external ffi.Pointer<ma_resource_manager_data_buffer_node>
       pRootDataBufferNode;
 
+  /// For synchronizing access to the data buffer binary tree.
   external ma_mutex dataBufferBSTLock;
 
+  /// The threads for executing jobs.
   @ffi.Array.multi([64])
   external ffi.Array<ma_thread> jobThreads;
 
+  /// Multi-consumer, multi-producer job queue for managing jobs for asynchronous decoding and streaming.
   external ma_job_queue jobQueue;
 
+  /// Only used if a custom VFS is not specified.
   external ma_default_vfs defaultVFS;
 
+  /// Only used if no log was specified in the config.
   external ma_log log;
 }
 
@@ -26570,27 +29041,33 @@ final class ma_resource_manager_config extends ffi.Struct {
 
   external ffi.Pointer<ma_log> pLog;
 
+  /// The decoded format to use. Set to ma_format_unknown (default) to use the file's native format.
   @ffi.Int32()
   external int decodedFormat;
 
+  /// The decoded channel count to use. Set to 0 (default) to use the file's native channel count.
   @ma_uint32()
   external int decodedChannels;
 
+  /// the decoded sample rate to use. Set to 0 (default) to use the file's native sample rate.
   @ma_uint32()
   external int decodedSampleRate;
 
+  /// Set to 0 if you want to self-manage your job threads. Defaults to 1.
   @ma_uint32()
   external int jobThreadCount;
 
   @ffi.Size()
   external int jobThreadStackSize;
 
+  /// The maximum number of jobs that can fit in the queue at a time. Defaults to MA_JOB_TYPE_RESOURCE_MANAGER_QUEUE_CAPACITY. Cannot be zero.
   @ma_uint32()
   external int jobQueueCapacity;
 
   @ma_uint32()
   external int flags;
 
+  /// Can be NULL in which case defaults will be used.
   external ffi.Pointer<ma_vfs> pVFS;
 
   external ffi.Pointer<ffi.Pointer<ma_decoding_backend_vtable>>
@@ -26603,21 +29080,26 @@ final class ma_resource_manager_config extends ffi.Struct {
 }
 
 final class ma_resource_manager_data_buffer_node extends ffi.Struct {
+  /// The hashed name. This is the key.
   @ma_uint32()
   external int hashedName32;
 
   @ma_uint32()
   external int refCount;
 
+  /// Result from asynchronous loading. When loading set to MA_BUSY. When fully loaded set to MA_SUCCESS. When deleting set to MA_UNAVAILABLE.
   @ffi.Int32()
   external int result;
 
+  /// For allocating execution orders for jobs.
   @ma_uint32()
   external int executionCounter;
 
+  /// For managing the order of execution for asynchronous jobs relating to this object. Incremented as jobs complete processing.
   @ma_uint32()
   external int executionPointer;
 
+  /// Set to true when the underlying data buffer was allocated the resource manager. Set to false if it is owned by the application (via ma_resource_manager_register_*()).
   @ma_bool32()
   external int isDataOwnedByResourceManager;
 
@@ -26631,6 +29113,7 @@ final class ma_resource_manager_data_buffer_node extends ffi.Struct {
 }
 
 final class ma_resource_manager_data_supply extends ffi.Struct {
+  /// Read and written from different threads so needs to be accessed atomically.
   @ffi.Int32()
   external int type;
 
@@ -26638,9 +29121,16 @@ final class ma_resource_manager_data_supply extends ffi.Struct {
 }
 
 abstract class ma_resource_manager_data_supply_type {
+  /// Used for determining whether or the data supply has been initialized.
   static const int ma_resource_manager_data_supply_type_unknown = 0;
+
+  /// Data supply is an encoded buffer. Connector is ma_decoder.
   static const int ma_resource_manager_data_supply_type_encoded = 1;
+
+  /// Data supply is a decoded buffer. Connector is ma_audio_buffer.
   static const int ma_resource_manager_data_supply_type_decoded = 2;
+
+  /// Data supply is a linked list of decoded buffers. Connector is ma_paged_audio_buffer.
   static const int ma_resource_manager_data_supply_type_decoded_paged = 3;
 }
 
@@ -26689,107 +29179,144 @@ final class UnnamedStruct56 extends ffi.Struct {
 }
 
 final class ma_resource_manager_data_buffer extends ffi.Struct {
+  /// Base data source. A data buffer is a data source.
   external ma_data_source_base ds;
 
+  /// A pointer to the resource manager that owns this buffer.
   external ffi.Pointer<ma_resource_manager> pResourceManager;
 
+  /// The data node. This is reference counted and is what supplies the data.
   external ffi.Pointer<ma_resource_manager_data_buffer_node> pNode;
 
+  /// The flags that were passed used to initialize the buffer.
   @ma_uint32()
   external int flags;
 
+  /// For allocating execution orders for jobs.
   @ma_uint32()
   external int executionCounter;
 
+  /// For managing the order of execution for asynchronous jobs relating to this object. Incremented as jobs complete processing.
   @ma_uint32()
   external int executionPointer;
 
+  /// Only updated by the public API. Never written nor read from the job thread.
   @ma_uint64()
   external int seekTargetInPCMFrames;
 
+  /// On the next read we need to seek to the frame cursor.
   @ma_bool32()
   external int seekToCursorOnNextRead;
 
+  /// Keeps track of a result of decoding. Set to MA_BUSY while the buffer is still loading. Set to MA_SUCCESS when loading is finished successfully. Otherwise set to some other code.
   @ffi.Int32()
   external int result;
 
+  /// Can be read and written by different threads at the same time. Must be used atomically.
   @ma_bool32()
   external int isLooping;
 
+  /// Used for asynchronous loading to ensure we don't try to initialize the connector multiple times while waiting for the node to fully load.
   external ma_atomic_bool32 isConnectorInitialized;
 
+  /// Connects this object to the node's data supply.
   external UnnamedUnion20 connector;
 }
 
 final class UnnamedUnion20 extends ffi.Union {
+  /// Supply type is ma_resource_manager_data_supply_type_encoded
   external ma_decoder decoder;
 
+  /// Supply type is ma_resource_manager_data_supply_type_decoded
   external ma_audio_buffer buffer;
 
+  /// Supply type is ma_resource_manager_data_supply_type_decoded_paged
   external ma_paged_audio_buffer pagedBuffer;
 }
 
 final class ma_resource_manager_data_stream extends ffi.Struct {
+  /// Base data source. A data stream is a data source.
   external ma_data_source_base ds;
 
+  /// A pointer to the resource manager that owns this data stream.
   external ffi.Pointer<ma_resource_manager> pResourceManager;
 
+  /// The flags that were passed used to initialize the stream.
   @ma_uint32()
   external int flags;
 
+  /// Used for filling pages with data. This is only ever accessed by the job thread. The public API should never touch this.
   external ma_decoder decoder;
 
+  /// Required for determining whether or not the decoder should be uninitialized in MA_JOB_TYPE_RESOURCE_MANAGER_FREE_DATA_STREAM.
   @ma_bool32()
   external int isDecoderInitialized;
 
+  /// This is calculated when first loaded by the MA_JOB_TYPE_RESOURCE_MANAGER_LOAD_DATA_STREAM.
   @ma_uint64()
   external int totalLengthInPCMFrames;
 
+  /// The playback cursor, relative to the current page. Only ever accessed by the public API. Never accessed by the job thread.
   @ma_uint32()
   external int relativeCursor;
 
+  /// The playback cursor, in absolute position starting from the start of the file.
   @ma_uint64()
   external int absoluteCursor;
 
+  /// Toggles between 0 and 1. Index 0 is the first half of pPageData. Index 1 is the second half. Only ever accessed by the public API. Never accessed by the job thread.
   @ma_uint32()
   external int currentPageIndex;
 
+  /// For allocating execution orders for jobs.
   @ma_uint32()
   external int executionCounter;
 
+  /// For managing the order of execution for asynchronous jobs relating to this object. Incremented as jobs complete processing.
   @ma_uint32()
   external int executionPointer;
 
+  /// Whether or not the stream is looping. It's important to set the looping flag at the data stream level for smooth loop transitions.
   @ma_bool32()
   external int isLooping;
 
+  /// Buffer containing the decoded data of each page. Allocated once at initialization time.
   external ffi.Pointer<ffi.Void> pPageData;
 
+  /// The number of valid PCM frames in each page. Used to determine the last valid frame.
   @ffi.Array.multi([2])
   external ffi.Array<ma_uint32> pageFrameCount;
 
+  /// Result from asynchronous loading. When loading set to MA_BUSY. When initialized set to MA_SUCCESS. When deleting set to MA_UNAVAILABLE. If an error occurs when loading, set to an error code.
   @ffi.Int32()
   external int result;
 
+  /// Whether or not the decoder has reached the end.
   @ma_bool32()
   external int isDecoderAtEnd;
 
+  /// Booleans to indicate whether or not a page is valid. Set to false by the public API, set to true by the job thread. Set to false as the pages are consumed, true when they are filled.
   @ffi.Array.multi([2])
   external ffi.Array<ma_bool32> isPageValid;
 
+  /// When 0, no seeking is being performed. When > 0, a seek is being performed and reading should be delayed with MA_BUSY.
   @ma_bool32()
   external int seekCounter;
 }
 
 final class ma_resource_manager_data_source extends ffi.Struct {
+  /// Must be the first item because we need the first item to be the data source callbacks for the buffer or stream.
   external UnnamedUnion21 backend;
 
+  /// The flags that were passed in to ma_resource_manager_data_source_init().
   @ma_uint32()
   external int flags;
 
+  /// For allocating execution orders for jobs.
   @ma_uint32()
   external int executionCounter;
 
+  /// For managing the order of execution for asynchronous jobs relating to this object. Incremented as jobs complete processing.
   @ma_uint32()
   external int executionPointer;
 }
@@ -26801,13 +29328,23 @@ final class UnnamedUnion21 extends ffi.Union {
 }
 
 abstract class ma_resource_manager_data_source_flags {
+  /// When set, does not load the entire data source in memory. Disk I/O will happen on job threads.
   static const int MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM = 1;
+
+  /// Decode data before storing in memory. When set, decoding is done at the resource manager level rather than the mixing thread. Results in faster mixing, but higher memory usage.
   static const int MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE = 2;
+
+  /// When set, the resource manager will load the data source asynchronously.
   static const int MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC = 4;
+
+  /// When set, waits for initialization of the underlying data source before returning from ma_resource_manager_data_source_init().
   static const int MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_WAIT_INIT = 8;
+
+  /// Gives the resource manager a hint that the length of the data source is unknown and calling `ma_data_source_get_length_in_pcm_frames()` should be avoided.
   static const int MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_UNKNOWN_LENGTH = 16;
 }
 
+/// Pipeline notifications used by the resource manager. Made up of both an async notification and a fence, both of which are optional.
 final class ma_resource_manager_pipeline_stage_notification extends ffi.Struct {
   external ffi.Pointer<ma_async_notification> pNotification;
 
@@ -26815,13 +29352,18 @@ final class ma_resource_manager_pipeline_stage_notification extends ffi.Struct {
 }
 
 final class ma_resource_manager_pipeline_notifications extends ffi.Struct {
+  /// Initialization of the decoder.
   external ma_resource_manager_pipeline_stage_notification init;
 
+  /// Decoding fully completed.
   external ma_resource_manager_pipeline_stage_notification done;
 }
 
 abstract class ma_resource_manager_flags {
+  /// Indicates ma_resource_manager_next_job() should not block. Only valid when the job thread count is 0.
   static const int MA_RESOURCE_MANAGER_FLAG_NON_BLOCKING = 1;
+
+  /// Disables any kind of multithreading. Implicitly enables MA_RESOURCE_MANAGER_FLAG_NON_BLOCKING.
   static const int MA_RESOURCE_MANAGER_FLAG_NO_THREADING = 2;
 }
 
@@ -26856,27 +29398,34 @@ final class ma_resource_manager_data_source_config extends ffi.Struct {
 }
 
 final class ma_node_graph extends ffi.Struct {
+  /// The node graph itself is a node so it can be connected as an input to different node graph. This has zero inputs and calls ma_node_graph_read_pcm_frames() to generate it's output.
   external ma_node_base base;
 
+  /// Special node that all nodes eventually connect to. Data is read from this node in ma_node_graph_read_pcm_frames().
   external ma_node_base endpoint;
 
   @ma_uint16()
   external int nodeCacheCapInFrames;
 
+  /// Read and written by multiple threads.
   @ma_bool32()
   external int isReading;
 }
 
 final class ma_node_base extends ffi.Struct {
+  /// The graph this node belongs to.
   external ffi.Pointer<ma_node_graph> pNodeGraph;
 
   external ffi.Pointer<ma_node_vtable> vtable;
 
+  /// Allocated on the heap. Fixed size. Needs to be stored on the heap because reading from output buses is done in separate function calls.
   external ffi.Pointer<ffi.Float> pCachedData;
 
+  /// The capacity of the input data cache in frames, per bus.
   @ma_uint16()
   external int cachedDataCapInFramesPerBus;
 
+  /// These variables are read and written only from the audio thread.
   @ma_uint16()
   external int cachedFrameCountOut;
 
@@ -26886,12 +29435,15 @@ final class ma_node_base extends ffi.Struct {
   @ma_uint16()
   external int consumedFrameCountIn;
 
+  /// When set to stopped, nothing will be read, regardless of the times in stateTimes.
   @ffi.Int32()
   external int state;
 
+  /// Indexed by ma_node_state. Specifies the time based on the global clock that a node should be considered to be in the relevant state.
   @ffi.Array.multi([2])
   external ffi.Array<ma_uint64> stateTimes;
 
+  /// The node's local clock. This is just a running sum of the number of output frames that have been processed. Can be modified by any thread with `ma_node_set_time()`.
   @ma_uint64()
   external int localTime;
 
@@ -26905,19 +29457,31 @@ final class ma_node_base extends ffi.Struct {
 
   external ffi.Pointer<ma_node_output_bus> pOutputBuses;
 
+  /// Memory management.
   @ffi.Array.multi([2])
   external ffi.Array<ma_node_input_bus> _inputBuses;
 
   @ffi.Array.multi([2])
   external ffi.Array<ma_node_output_bus> _outputBuses;
 
+  /// A heap allocation for internal use only. pInputBuses and/or pOutputBuses will point to this if the bus count exceeds MA_MAX_NODE_LOCAL_BUS_COUNT.
   external ffi.Pointer<ffi.Void> _pHeap;
 
+  /// If set to true, the node owns the heap allocation and _pHeap will be freed in ma_node_uninit().
   @ma_bool32()
   external int _ownsHeap;
 }
 
 final class ma_node_vtable extends ffi.Struct {
+  /// Extended processing callback. This callback is used for effects that process input and output
+  /// at different rates (i.e. they perform resampling). This is similar to the simple version, only
+  /// they take two seperate frame counts: one for input, and one for output.
+  ///
+  /// On input, `pFrameCountOut` is equal to the capacity of the output buffer for each bus, whereas
+  /// `pFrameCountIn` will be equal to the number of PCM frames in each of the buffers in `ppFramesIn`.
+  ///
+  /// On output, set `pFrameCountOut` to the number of PCM frames that were actually output and set
+  /// `pFrameCountIn` to the number of input frames that were consumed.
   external ffi.Pointer<
       ffi.NativeFunction<
           ffi.Void Function(
@@ -26927,6 +29491,11 @@ final class ma_node_vtable extends ffi.Struct {
               ffi.Pointer<ffi.Pointer<ffi.Float>> ppFramesOut,
               ffi.Pointer<ma_uint32> pFrameCountOut)>> onProcess;
 
+  /// A callback for retrieving the number of a input frames that are required to output the
+  /// specified number of output frames. You would only want to implement this when the node performs
+  /// resampling. This is optional, even for nodes that perform resampling, but it does offer a
+  /// small reduction in latency as it allows miniaudio to calculate the exact number of input frames
+  /// to read at a time instead of having to estimate.
   external ffi.Pointer<
           ffi.NativeFunction<
               ffi.Int32 Function(
@@ -26935,70 +29504,94 @@ final class ma_node_vtable extends ffi.Struct {
                   ffi.Pointer<ma_uint32> pInputFrameCount)>>
       onGetRequiredInputFrameCount;
 
+  /// The number of input buses. This is how many sub-buffers will be contained in the `ppFramesIn`
+  /// parameters of the callbacks above.
   @ma_uint8()
   external int inputBusCount;
 
+  /// The number of output buses. This is how many sub-buffers will be contained in the `ppFramesOut`
+  /// parameters of the callbacks above.
   @ma_uint8()
   external int outputBusCount;
 
+  /// Flags describing characteristics of the node. This is currently just a placeholder for some
+  /// ideas for later on.
   @ma_uint32()
   external int flags;
 }
 
 typedef ma_node = ffi.Void;
 
+/// The playback state of a node. Either started or stopped.
 abstract class ma_node_state {
   static const int ma_node_state_started = 0;
   static const int ma_node_state_stopped = 1;
 }
 
 final class ma_node_input_bus extends ffi.Struct {
+  /// Dummy head node for simplifying some lock-free thread-safety stuff.
   external ma_node_output_bus head;
 
+  /// This is used to determine whether or not the input bus is finding the next node in the list. Used for thread safety when detaching output buses.
   @ma_uint32()
   external int nextCounter;
 
+  /// Unfortunate lock, but significantly simplifies the implementation. Required for thread-safe attaching and detaching.
   @ma_spinlock()
   external int lock;
 
+  /// The number of channels in the audio stream for this bus.
   @ma_uint8()
   external int channels;
 }
 
 final class ma_node_output_bus extends ffi.Struct {
+  /// The node that owns this output bus. The input node. Will be null for dummy head and tail nodes.
   external ffi.Pointer<ma_node> pNode;
 
+  /// The index of the output bus on pNode that this output bus represents.
   @ma_uint8()
   external int outputBusIndex;
 
+  /// The number of channels in the audio stream for this bus.
   @ma_uint8()
   external int channels;
 
+  /// The index of the input bus on the input. Required for detaching. Will only be used within the spinlock so does not need to be atomic.
   @ma_uint8()
   external int inputNodeInputBusIndex;
 
+  /// Some state flags for tracking the read state of the output buffer. A combination of MA_NODE_OUTPUT_BUS_FLAG_*.
   @ma_uint32()
   external int flags;
 
+  /// Reference count for some thread-safety when detaching.
   @ma_uint32()
   external int refCount;
 
+  /// This is used to prevent iteration of nodes that are in the middle of being detached. Used for thread safety.
   @ma_bool32()
   external int isAttached;
 
+  /// Unfortunate lock, but significantly simplifies the implementation. Required for thread-safe attaching and detaching.
   @ma_spinlock()
   external int lock;
 
+  /// Linear.
   @ffi.Float()
   external double volume;
 
+  /// If null, it's the tail node or detached.
   external ffi.Pointer<ma_node_output_bus> pNext;
 
+  /// If null, it's the head node or detached.
   external ffi.Pointer<ma_node_output_bus> pPrev;
 
+  /// The node that this output bus is attached to. Required for detaching.
   external ffi.Pointer<ma_node> pInputNode;
 }
 
+/// Node flags.
 abstract class ma_node_flags {
   static const int MA_NODE_FLAG_PASSTHROUGH = 1;
   static const int MA_NODE_FLAG_CONTINUOUS_PROCESSING = 2;
@@ -27008,19 +29601,25 @@ abstract class ma_node_flags {
 }
 
 final class ma_node_config extends ffi.Struct {
+  /// Should never be null. Initialization of the node will fail if so.
   external ffi.Pointer<ma_node_vtable> vtable;
 
+  /// Defaults to ma_node_state_started.
   @ffi.Int32()
   external int initialState;
 
+  /// Only used if the vtable specifies an input bus count of `MA_NODE_BUS_COUNT_UNKNOWN`, otherwise must be set to `MA_NODE_BUS_COUNT_UNKNOWN` (default).
   @ma_uint32()
   external int inputBusCount;
 
+  /// Only used if the vtable specifies an output bus count of `MA_NODE_BUS_COUNT_UNKNOWN`, otherwise  be set to `MA_NODE_BUS_COUNT_UNKNOWN` (default).
   @ma_uint32()
   external int outputBusCount;
 
+  /// The number of elements are determined by the input bus count as determined by the vtable, or `inputBusCount` if the vtable specifies `MA_NODE_BUS_COUNT_UNKNOWN`.
   external ffi.Pointer<ma_uint32> pInputChannels;
 
+  /// The number of elements are determined by the output bus count as determined by the vtable, or `outputBusCount` if the vtable specifies `MA_NODE_BUS_COUNT_UNKNOWN`.
   external ffi.Pointer<ma_uint32> pOutputChannels;
 }
 
@@ -27032,6 +29631,7 @@ final class ma_node_graph_config extends ffi.Struct {
   external int nodeCacheCapInFrames;
 }
 
+/// Data source node. 0 input buses, 1 output bus. Used for reading from a data source.
 final class ma_data_source_node_config extends ffi.Struct {
   external ma_node_config nodeConfig;
 
@@ -27044,6 +29644,7 @@ final class ma_data_source_node extends ffi.Struct {
   external ffi.Pointer<ma_data_source> pDataSource;
 }
 
+/// Splitter Node. 1 input, many outputs. Used for splitting/copying a stream so it can be as input into two separate output nodes.
 final class ma_splitter_node_config extends ffi.Struct {
   external ma_node_config nodeConfig;
 
@@ -27058,6 +29659,7 @@ final class ma_splitter_node extends ffi.Struct {
   external ma_node_base base;
 }
 
+/// Biquad Node
 final class ma_biquad_node_config extends ffi.Struct {
   external ma_node_config nodeConfig;
 
@@ -27070,6 +29672,7 @@ final class ma_biquad_node extends ffi.Struct {
   external ma_biquad biquad;
 }
 
+/// Low Pass Filter Node
 final class ma_lpf_node_config extends ffi.Struct {
   external ma_node_config nodeConfig;
 
@@ -27082,6 +29685,7 @@ final class ma_lpf_node extends ffi.Struct {
   external ma_lpf lpf;
 }
 
+/// High Pass Filter Node
 final class ma_hpf_node_config extends ffi.Struct {
   external ma_node_config nodeConfig;
 
@@ -27094,6 +29698,7 @@ final class ma_hpf_node extends ffi.Struct {
   external ma_hpf hpf;
 }
 
+/// Band Pass Filter Node
 final class ma_bpf_node_config extends ffi.Struct {
   external ma_node_config nodeConfig;
 
@@ -27106,6 +29711,7 @@ final class ma_bpf_node extends ffi.Struct {
   external ma_bpf bpf;
 }
 
+/// Notching Filter Node
 final class ma_notch_node_config extends ffi.Struct {
   external ma_node_config nodeConfig;
 
@@ -27121,6 +29727,7 @@ final class ma_notch_node extends ffi.Struct {
   external ma_notch2 notch;
 }
 
+/// Peaking Filter Node
 final class ma_peak_node_config extends ffi.Struct {
   external ma_node_config nodeConfig;
 
@@ -27136,6 +29743,7 @@ final class ma_peak_node extends ffi.Struct {
   external ma_peak2 peak;
 }
 
+/// Low Shelf Filter Node
 final class ma_loshelf_node_config extends ffi.Struct {
   external ma_node_config nodeConfig;
 
@@ -27151,6 +29759,7 @@ final class ma_loshelf_node extends ffi.Struct {
   external ma_loshelf2 loshelf;
 }
 
+/// High Shelf Filter Node
 final class ma_hishelf_node_config extends ffi.Struct {
   external ma_node_config nodeConfig;
 
@@ -27179,10 +29788,12 @@ final class ma_delay_node extends ffi.Struct {
 }
 
 final class ma_engine extends ffi.Struct {
+  /// An engine is a node graph. It should be able to be plugged into any ma_node_graph API (with a cast) which means this must be the first member of this struct.
   external ma_node_graph nodeGraph;
 
   external ffi.Pointer<ma_resource_manager> pResourceManager;
 
+  /// Optionally set via the config, otherwise allocated by the engine in ma_engine_init().
   external ffi.Pointer<ma_device> pDevice;
 
   external ffi.Pointer<ma_log> pLog;
@@ -27204,14 +29815,18 @@ final class ma_engine extends ffi.Struct {
   @ma_bool8()
   external int ownsDevice;
 
+  /// For synchronizing access so the inlined sound list.
   @ma_spinlock()
   external int inlinedSoundLock;
 
+  /// The first inlined sound. Inlined sounds are tracked in a linked list.
   external ffi.Pointer<ma_sound_inlined> pInlinedSoundHead;
 
+  /// The total number of allocated inlined sound objects. Used for debugging.
   @ma_uint32()
   external int inlinedSoundCount;
 
+  /// The number of frames to interpolate the gain of spatialized sounds across.
   @ma_uint32()
   external int gainSmoothTimeInFrames;
 
@@ -27235,10 +29850,12 @@ final class ma_sound_inlined extends ffi.Struct {
 }
 
 final class ma_sound extends ffi.Struct {
+  /// Must be the first member for compatibility with the ma_node API.
   external ma_engine_node engineNode;
 
   external ffi.Pointer<ma_data_source> pDataSource;
 
+  /// The PCM frame index to seek to in the mixing thread. Set to (~(ma_uint64)0) to not perform any seeking.
   @ma_uint64()
   external int seekTarget;
 
@@ -27256,11 +29873,15 @@ final class ma_sound extends ffi.Struct {
       pResourceManagerDataSource;
 }
 
+/// Base node object for both ma_sound and ma_sound_group.
 final class ma_engine_node extends ffi.Struct {
+  /// Must be the first member for compatiblity with the ma_node API.
   external ma_node_base baseNode;
 
+  /// A pointer to the engine. Set based on the value from the config.
   external ffi.Pointer<ma_engine> pEngine;
 
+  /// The sample rate of the input data. For sounds backed by a data source, this will be the data source's sample rate. Otherwise it'll be the engine's sample rate.
   @ma_uint32()
   external int sampleRate;
 
@@ -27272,52 +29893,65 @@ final class ma_engine_node extends ffi.Struct {
 
   external ma_fader fader;
 
+  /// For pitch shift.
   external ma_linear_resampler resampler;
 
   external ma_spatializer spatializer;
 
   external ma_panner panner;
 
+  /// This will only be used if volumeSmoothTimeInPCMFrames is > 0.
   external ma_gainer volumeGainer;
 
+  /// Defaults to 1.
   external ma_atomic_float volume;
 
   @ffi.Float()
   external double pitch;
 
+  /// For determining whether or not the resampler needs to be updated to reflect the new pitch. The resampler will be updated on the mixing thread.
   @ffi.Float()
   external double oldPitch;
 
+  /// For determining whether or not the resampler needs to be updated to take a new doppler pitch into account.
   @ffi.Float()
   external double oldDopplerPitch;
 
+  /// When set to true, pitching will be disabled which will allow the resampler to be bypassed to save some computation.
   @ma_bool32()
   external int isPitchDisabled;
 
+  /// Set to false by default. When set to false, will not have spatialisation applied.
   @ma_bool32()
   external int isSpatializationDisabled;
 
+  /// The index of the listener this node should always use for spatialization. If set to MA_LISTENER_INDEX_CLOSEST the engine will use the closest listener.
   @ma_uint32()
   external int pinnedListenerIndex;
 
   external UnnamedStruct57 fadeSettings;
 
+  /// Memory management.
   @ma_bool8()
   external int _ownsHeap;
 
   external ffi.Pointer<ffi.Void> _pHeap;
 }
 
+/// When setting a fade, it's not done immediately in ma_sound_set_fade(). It's deferred to the audio thread which means we need to store the settings here.
 final class UnnamedStruct57 extends ffi.Struct {
   external ma_atomic_float volumeBeg;
 
   external ma_atomic_float volumeEnd;
 
+  /// <-- Defaults to (~(ma_uint64)0) which is used to indicate that no fade should be applied.
   external ma_atomic_uint64 fadeLengthInFrames;
 
+  /// <-- The time to start the fade.
   external ma_atomic_uint64 absoluteGlobalTimeInFrames;
 }
 
+/// Callback for when a sound reaches the end.
 typedef ma_sound_end_proc = ffi.Pointer<
     ffi.NativeFunction<
         ffi.Void Function(
@@ -27327,14 +29961,30 @@ typedef ma_engine_process_proc = ffi.Pointer<
         ffi.Void Function(ffi.Pointer<ffi.Void> pUserData,
             ffi.Pointer<ffi.Float> pFramesOut, ma_uint64 frameCount)>>;
 
+/// Sound flags.
 abstract class ma_sound_flags {
+  /// MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_STREAM
   static const int MA_SOUND_FLAG_STREAM = 1;
+
+  /// MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_DECODE
   static const int MA_SOUND_FLAG_DECODE = 2;
+
+  /// MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_ASYNC
   static const int MA_SOUND_FLAG_ASYNC = 4;
+
+  /// MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_WAIT_INIT
   static const int MA_SOUND_FLAG_WAIT_INIT = 8;
+
+  /// MA_RESOURCE_MANAGER_DATA_SOURCE_FLAG_UNKNOWN_LENGTH
   static const int MA_SOUND_FLAG_UNKNOWN_LENGTH = 16;
+
+  /// Do not attach to the endpoint by default. Useful for when setting up nodes in a complex graph system.
   static const int MA_SOUND_FLAG_NO_DEFAULT_ATTACHMENT = 4096;
+
+  /// Disable pitch shifting with ma_sound_set_pitch() and ma_sound_group_set_pitch(). This is an optimization.
   static const int MA_SOUND_FLAG_NO_PITCH = 8192;
+
+  /// Disable spatialization.
   static const int MA_SOUND_FLAG_NO_SPATIALIZATION = 16384;
 }
 
@@ -27355,52 +30005,68 @@ final class ma_engine_node_config extends ffi.Struct {
   @ma_uint32()
   external int channelsOut;
 
+  /// Only used when the type is set to ma_engine_node_type_sound.
   @ma_uint32()
   external int sampleRate;
 
+  /// The number of frames to smooth over volume changes. Defaults to 0 in which case no smoothing is used.
   @ma_uint32()
   external int volumeSmoothTimeInPCMFrames;
 
   @ffi.Int32()
   external int monoExpansionMode;
 
+  /// Pitching can be explicitly disabled with MA_SOUND_FLAG_NO_PITCH to optimize processing.
   @ma_bool8()
   external int isPitchDisabled;
 
+  /// Spatialization can be explicitly disabled with MA_SOUND_FLAG_NO_SPATIALIZATION.
   @ma_bool8()
   external int isSpatializationDisabled;
 
+  /// The index of the listener this node should always use for spatialization. If set to MA_LISTENER_INDEX_CLOSEST the engine will use the closest listener.
   @ma_uint8()
   external int pinnedListenerIndex;
 }
 
 final class ma_sound_config extends ffi.Struct {
+  /// Set this to load from the resource manager.
   external ffi.Pointer<ffi.Char> pFilePath;
 
+  /// Set this to load from the resource manager.
   external ffi.Pointer<ffi.WChar> pFilePathW;
 
+  /// Set this to load from an existing data source.
   external ffi.Pointer<ma_data_source> pDataSource;
 
+  /// If set, the sound will be attached to an input of this node. This can be set to a ma_sound. If set to NULL, the sound will be attached directly to the endpoint unless MA_SOUND_FLAG_NO_DEFAULT_ATTACHMENT is set in `flags`.
   external ffi.Pointer<ma_node> pInitialAttachment;
 
+  /// The index of the input bus of pInitialAttachment to attach the sound to.
   @ma_uint32()
   external int initialAttachmentInputBusIndex;
 
+  /// Ignored if using a data source as input (the data source's channel count will be used always). Otherwise, setting to 0 will cause the engine's channel count to be used.
   @ma_uint32()
   external int channelsIn;
 
+  /// Set this to 0 (default) to use the engine's channel count. Set to MA_SOUND_SOURCE_CHANNEL_COUNT to use the data source's channel count (only used if using a data source as input).
   @ma_uint32()
   external int channelsOut;
 
+  /// Controls how the mono channel should be expanded to other channels when spatialization is disabled on a sound.
   @ffi.Int32()
   external int monoExpansionMode;
 
+  /// A combination of MA_SOUND_FLAG_* flags.
   @ma_uint32()
   external int flags;
 
+  /// The number of frames to smooth over volume changes. Defaults to 0 in which case no smoothing is used.
   @ma_uint32()
   external int volumeSmoothTimeInPCMFrames;
 
+  /// Initializes the sound such that it's seeked to this location by default.
   @ma_uint64()
   external int initialSeekPointInPCMFrames;
 
@@ -27419,71 +30085,93 @@ final class ma_sound_config extends ffi.Struct {
   @ma_bool32()
   external int isLooping;
 
+  /// Fired when the sound reaches the end. Will be fired from the audio thread. Do not restart, uninitialize or otherwise change the state of the sound from here. Instead fire an event or set a variable to indicate to a different thread to change the start of the sound. Will not be fired in response to a scheduled stop with ma_sound_set_stop_time_*().
   external ma_sound_end_proc endCallback;
 
   external ffi.Pointer<ffi.Void> pEndCallbackUserData;
 
   external ma_resource_manager_pipeline_notifications initNotifications;
 
+  /// Deprecated. Use initNotifications instead. Released when the resource manager has finished decoding the entire sound. Not used with streams.
   external ffi.Pointer<ma_fence> pDoneFence;
 }
 
+/// A sound group is just a sound.
 typedef ma_sound_group_config = ma_sound_config;
 
 final class ma_engine_config extends ffi.Struct {
+  /// Can be null in which case a resource manager will be created for you.
   external ffi.Pointer<ma_resource_manager> pResourceManager;
 
   external ffi.Pointer<ma_context> pContext;
 
+  /// If set, the caller is responsible for calling ma_engine_data_callback() in the device's data callback.
   external ffi.Pointer<ma_device> pDevice;
 
+  /// The ID of the playback device to use with the default listener.
   external ffi.Pointer<ma_device_id> pPlaybackDeviceID;
 
+  /// Can be null. Can be used to provide a custom device data callback.
   external ma_device_data_proc dataCallback;
 
   external ma_device_notification_proc notificationCallback;
 
+  /// When set to NULL, will use the context's log.
   external ffi.Pointer<ma_log> pLog;
 
+  /// Must be between 1 and MA_ENGINE_MAX_LISTENERS.
   @ma_uint32()
   external int listenerCount;
 
+  /// The number of channels to use when mixing and spatializing. When set to 0, will use the native channel count of the device.
   @ma_uint32()
   external int channels;
 
+  /// The sample rate. When set to 0 will use the native channel count of the device.
   @ma_uint32()
   external int sampleRate;
 
+  /// If set to something other than 0, updates will always be exactly this size. The underlying device may be a different size, but from the perspective of the mixer that won't matter.
   @ma_uint32()
   external int periodSizeInFrames;
 
+  /// Used if periodSizeInFrames is unset.
   @ma_uint32()
   external int periodSizeInMilliseconds;
 
+  /// The number of frames to interpolate the gain of spatialized sounds across. If set to 0, will use gainSmoothTimeInMilliseconds.
   @ma_uint32()
   external int gainSmoothTimeInFrames;
 
+  /// When set to 0, gainSmoothTimeInFrames will be used. If both are set to 0, a default value will be used.
   @ma_uint32()
   external int gainSmoothTimeInMilliseconds;
 
+  /// Defaults to 0. Controls the default amount of smoothing to apply to volume changes to sounds. High values means more smoothing at the expense of high latency (will take longer to reach the new volume).
   @ma_uint32()
   external int defaultVolumeSmoothTimeInPCMFrames;
 
   external ma_allocation_callbacks allocationCallbacks;
 
+  /// When set to true, requires an explicit call to ma_engine_start(). This is false by default, meaning the engine will be started automatically in ma_engine_init().
   @ma_bool32()
   external int noAutoStart;
 
+  /// When set to true, don't create a default device. ma_engine_read_pcm_frames() can be called manually to read data.
   @ma_bool32()
   external int noDevice;
 
+  /// Controls how the mono channel should be expanded to other channels when spatialization is disabled on a sound.
   @ffi.Int32()
   external int monoExpansionMode;
 
+  /// A pointer to a pre-allocated VFS object to use with the resource manager. This is ignored if pResourceManager is not NULL.
   external ffi.Pointer<ma_vfs> pResourceManagerVFS;
 
+  /// Fired at the end of each call to ma_engine_read_pcm_frames(). For engine's that manage their own internal device (the default configuration), this will be fired from the audio thread, and you do not need to call ma_engine_read_pcm_frames() manually in order to trigger this.
   external ma_engine_process_proc onProcess;
 
+  /// User data that's passed into onProcess.
   external ffi.Pointer<ffi.Void> pProcessUserData;
 }
 

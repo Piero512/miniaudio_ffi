@@ -32,4 +32,7 @@ ffigen:
     symbol-address:
       include:
         - '.*'
+  comments:
+    style: any
+    length: full
   description: 'FFI bindings to miniaudio library'

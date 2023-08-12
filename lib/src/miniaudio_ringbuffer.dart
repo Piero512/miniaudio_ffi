@@ -27,14 +27,13 @@ class MiniAudioPCMRingBuffer implements Finalizable {
     ffi.ma_pcm_rb_init(
         format, channels, frameCount, nullptr, nullptr, pcmRingBuffer);
     final retval = MiniAudioPCMRingBuffer._(ffi, pcmRingBuffer);
-    final _externalSize =
-        ffi.ma_get_bytes_per_sample(format) * channels * frameCount;
+    final extSize = ffi.ma_get_bytes_per_sample(format) * channels * frameCount;
     _allocFinalizer.attach(retval, pcmRingBuffer, detach: retval);
     _finalizer?.attach(
       retval,
       pcmRingBuffer.cast(),
       detach: retval,
-      externalSize: _externalSize,
+      externalSize: extSize,
     );
     return retval;
   }

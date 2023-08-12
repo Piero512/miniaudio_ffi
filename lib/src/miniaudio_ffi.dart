@@ -6,6 +6,7 @@ import 'miniaudio_ringbuffer.dart';
 import 'miniaudio_decode.dart';
 import 'miniaudio_device.dart';
 import 'miniaudio_bindings.dart';
+import 'miniaudio_converter.dart';
 
 class MiniAudio {
   static MiniAudioBindings getFlutterBindings() {
@@ -46,6 +47,26 @@ class MiniAudio {
       format: sampleFormat,
       frameCount: frameCount,
       channels: channels,
+    );
+  }
+
+  static MiniAudioConverter getDefaultConverter(
+    MiniAudioBindings ffi, {
+    int? inputFormat,
+    int? outputFormat,
+    int? inputChannels,
+    int? outputChannels,
+    int? inputSampleRate,
+    int? outputSampleRate,
+  }) {
+    return MiniAudioConverter.initDefault(
+      ffi,
+      inputFormat: inputFormat,
+      outputFormat: outputFormat,
+      inputChannels: inputChannels,
+      outputChannels: outputChannels,
+      inputSampleRate: inputSampleRate,
+      outputSampleRate: outputSampleRate,
     );
   }
 }

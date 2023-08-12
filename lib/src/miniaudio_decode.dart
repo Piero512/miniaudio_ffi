@@ -5,6 +5,8 @@ import 'package:miniaudio_ffi/src/utils.dart';
 
 import 'miniaudio_bindings.dart';
 
+typedef ReadFramesReturnRecord = ({int errCode, int framesActuallyRead});
+
 class MiniAudioDecoder implements Finalizable {
   static NativeFinalizer? _decoderFinalizer;
   static final Finalizer<Pointer<ma_decoder>> _allocFinalizer =
@@ -60,6 +62,11 @@ class MiniAudioDecoder implements Finalizable {
     return ffi.ma_get_bytes_per_sample(decoder.ref.outputFormat);
   }
 
+  int get sampleRate {
+    runtimeAssert(finalized != true, _finalizedMessage);
+    return decoder.ref.outputSampleRate;
+  }
+
   int get frameSize => sampleSize * channelCount;
 
   int get channelCount {
@@ -78,18 +85,22 @@ class MiniAudioDecoder implements Finalizable {
   ///
   /// You should have allocated at least [framesToRead] * [frameSize] bytes in this buffer.
   /// otherwise, the operation will be aborted.
-  ///
-  /// Returns the amount of frames read or -1 if the buffer isn't big enough.
-  int readFrames(
+  /// Returns a record with the error code and the frames read.
+  ReadFramesReturnRecord readFrames(
       Pointer<Uint8> frameBuffer, int frameBufferSize, int framesToRead) {
     runtimeAssert(finalized != true, _finalizedMessage);
     if (frameSize * framesToRead <= frameBufferSize) {
-      return using((alloc) {
-        final Pointer<Uint64> framesRead = alloc.call();
-        return ffi.ma_decoder_read_pcm_frames(
-            decoder, frameBuffer.cast<Void>(), framesToRead, framesRead.cast());
-      });
+      return using(
+        (alloc) {
+          final Pointer<Uint64> framesRead = alloc.call()..value = 0;
+          final retval = ffi.ma_decoder_read_pcm_frames(decoder,
+              frameBuffer.cast<Void>(), framesToRead, framesRead.cast());
+          return (errCode: retval, framesActuallyRead: framesRead.value);
+        },
+      );
+    } else {
+      throw ArgumentError.value(
+          frameBufferSize, 'frameBufferSize', 'is too small!');
     }
-    return -1;
   }
 }
