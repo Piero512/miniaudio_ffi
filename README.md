@@ -51,7 +51,7 @@ void main(List<String> arguments){
 
 ## Additional information
 
-It is very recommended you read the miniaudio documentation in (miniaud.io)[https://miniaud.io/docs/] so you familiarize with the some of the return values this library exposes directly to the user.
+It is very recommended you read the miniaudio documentation in [miniaud.io](https://miniaud.io/docs/) so you familiarize with the some of the return values this library exposes directly to the user.
 
 
 
