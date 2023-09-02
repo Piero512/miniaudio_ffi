@@ -18,7 +18,7 @@ class MiniAudio {
       var lib = DynamicLibrary.open('miniaudio.framework/miniaudio');
       return MiniAudioBindings(lib);
     } else if (Platform.isWindows) {
-      return MiniAudioBindings(DynamicLibrary.open('miniaudio_plugin.dll'));
+      return MiniAudioBindings(DynamicLibrary.open('miniaudio.dll'));
     }
     return MiniAudioBindings(DynamicLibrary.executable());
   }

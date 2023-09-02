@@ -9,12 +9,15 @@ typedef ReadFramesReturnRecord = ({int errCode, int framesActuallyRead});
 
 class MiniAudioDecoder implements Finalizable {
   static NativeFinalizer? _decoderFinalizer;
-  static final Finalizer<Pointer<ma_decoder>> _allocFinalizer =
-      Finalizer((ptr) => malloc.free(ptr));
+  static final Finalizer<Pointer<ma_decoder>> _allocFinalizer = Finalizer(
+    (ptr) => malloc.free(ptr),
+  );
   final MiniAudioBindings ffi;
   final Pointer<ma_decoder> decoder;
   bool finalized = false;
   static const _finalizedMessage = 'This instance is already finalized';
+  int? _cachedLength;
+
   MiniAudioDecoder._(
     this.ffi,
     this.decoder,
@@ -47,6 +50,8 @@ class MiniAudioDecoder implements Finalizable {
     });
   }
 
+  void dispose() => closeDecoder();
+
   void closeDecoder() {
     if (!finalized) {
       _allocFinalizer.detach(this);
@@ -72,6 +77,11 @@ class MiniAudioDecoder implements Finalizable {
   int get channelCount {
     runtimeAssert(finalized != true, _finalizedMessage);
     return decoder.ref.outputChannels;
+  }
+
+  int get outputFormat {
+    runtimeAssert(finalized != true, _finalizedMessage);
+    return decoder.ref.outputFormat;
   }
 
   /// Read frames from decoder
@@ -102,5 +112,53 @@ class MiniAudioDecoder implements Finalizable {
       throw ArgumentError.value(
           frameBufferSize, 'frameBufferSize', 'is too small!');
     }
+  }
+
+  int get positionInPCMFrames {
+    return using((a) {
+      final positionPtr = a.call<ma_uint64>();
+      final result = ffi.ma_decoder_get_cursor_in_pcm_frames(
+        decoder,
+        positionPtr,
+      );
+      if (result == ma_result.MA_SUCCESS) {
+        return positionPtr.value;
+      } else {
+        throw ArgumentError(
+          ffi.ma_result_description(result).cast<Utf8>().toDartString(),
+          'decoder',
+        );
+      }
+    });
+  }
+
+  set positionInPCMFrames(int value) {
+    final res = ffi.ma_decoder_seek_to_pcm_frame(decoder, value);
+    if (res != ma_result.MA_SUCCESS) {
+      throw ArgumentError.value(
+        value,
+        'positionInPCMFrames',
+        ffi.ma_result_description(res).cast<Utf8>().toDartString(),
+      );
+    }
+  }
+
+  int get lengthInPCMFrames {
+    _cachedLength ??= using((a) {
+      final lengthPtr = a.call<ma_uint64>();
+      final result = ffi.ma_decoder_get_length_in_pcm_frames(
+        decoder,
+        lengthPtr,
+      );
+      if (result == ma_result.MA_SUCCESS) {
+        return lengthPtr.value;
+      } else {
+        throw ArgumentError(
+          ffi.ma_result_description(result).cast<Utf8>().toDartString(),
+          'decoder',
+        );
+      }
+    });
+    return _cachedLength!;
   }
 }

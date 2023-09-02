@@ -2,6 +2,7 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 import 'package:miniaudio_ffi/miniaudio_ffi.dart';
+import 'package:miniaudio_ffi/src/utils.dart';
 
 import 'miniaudio_bindings.dart';
 
@@ -11,9 +12,11 @@ typedef ConvertFramesReturnRecord = ({
   int outputFramesConsumed
 });
 
-class MiniAudioConverter {
+class MiniAudioConverter implements Finalizable {
   final MiniAudioBindings ffi;
   final Pointer<ma_data_converter> converter;
+  bool disposed = false;
+  static NativeFinalizer? _finalizer;
 
   MiniAudioConverter._(this.ffi, this.converter) : assert(converter != nullptr);
 
@@ -26,6 +29,9 @@ class MiniAudioConverter {
     int? inputSampleRate,
     int? outputSampleRate,
   }) {
+    _finalizer ??= NativeFinalizer(
+      ffi.addresses.ma_data_converter_uninit.cast(),
+    );
     return using((alloc) {
       final cConfig = alloc.call<ma_data_converter_config>();
       cConfig.ref = ffi.ma_data_converter_config_init_default();
@@ -41,7 +47,10 @@ class MiniAudioConverter {
       final converterPtr = calloc.call<ma_data_converter>();
       final result = ffi.ma_data_converter_init(cConfig, nullptr, converterPtr);
       if (result == ma_result.MA_SUCCESS) {
-        return MiniAudioConverter._(ffi, converterPtr);
+        final newConverter = MiniAudioConverter._(ffi, converterPtr);
+        _finalizer?.attach(newConverter, converterPtr.cast(),
+            detach: newConverter, externalSize: sizeOf<ma_data_converter>());
+        return newConverter;
       } else {
         final readableError =
             ffi.ma_result_description(result).cast<Utf8>().toDartString();
@@ -51,8 +60,13 @@ class MiniAudioConverter {
     });
   }
 
-  ConvertFramesReturnRecord convertFrames(Pointer<Uint8> inputBuffer,
-      int inputframeCount, Pointer<Uint8> outBuffer, int outputFrameCount) {
+  ConvertFramesReturnRecord convertFrames(
+    Pointer<Uint8> inputBuffer,
+    int inputframeCount,
+    Pointer<Uint8> outBuffer,
+    int outputFrameCount,
+  ) {
+    runtimeAssert(!disposed);
     return using(
       (alloc) {
         final iframeCountPtr = alloc.call<Uint64>()..value = inputframeCount;
@@ -72,5 +86,14 @@ class MiniAudioConverter {
         );
       },
     );
+  }
+
+  void dispose() {
+    if (!disposed) {
+      _finalizer?.detach(this);
+      ffi.ma_data_converter_uninit(converter, nullptr);
+      malloc.free(converter);
+      disposed = true;
+    }
   }
 }

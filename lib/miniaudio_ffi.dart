@@ -4,3 +4,4 @@ export 'src/miniaudio_decode.dart';
 export 'src/miniaudio_bindings.dart';
 export 'src/miniaudio_ffi.dart';
 export 'src/miniaudio_device.dart';
+export 'src/miniaudio_converter.dart';
