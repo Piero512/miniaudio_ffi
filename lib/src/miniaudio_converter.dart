@@ -5,6 +5,7 @@ import 'package:miniaudio_ffi/miniaudio_ffi.dart';
 import 'package:miniaudio_ffi/src/utils.dart';
 
 import 'miniaudio_bindings.dart';
+import 'utils.dart' as ma;
 
 typedef ConvertFramesReturnRecord = ({
   int errorCode,
@@ -52,10 +53,7 @@ class MiniAudioConverter implements Finalizable {
             detach: newConverter, externalSize: sizeOf<ma_data_converter>());
         return newConverter;
       } else {
-        final readableError =
-            ffi.ma_result_description(result).cast<Utf8>().toDartString();
-        calloc.free(converterPtr);
-        throw ArgumentError(readableError);
+        throw ma.Ex.fromResultValue(result, ffi);
       }
     });
   }
@@ -86,6 +84,40 @@ class MiniAudioConverter implements Finalizable {
         );
       },
     );
+  }
+
+  int expectedOutputFramesForInputFrames(int inputFramesCount) {
+    return using((a) {
+      final outValue = a.call<UnsignedLongLong>();
+      ffi.ma_data_converter_get_expected_output_frame_count(
+        converter,
+        inputFramesCount,
+        outValue,
+      );
+      return outValue.value;
+    });
+  }
+
+  int requiredInputFramesForDesiredOutFrames(int outFramesCount) {
+    return using((a) {
+      final outValue = a.call<UnsignedLongLong>();
+      ffi.ma_data_converter_get_required_input_frame_count(
+        converter,
+        outFramesCount,
+        outValue,
+      );
+      return outValue.value;
+    });
+  }
+
+  int get outFrameSize {
+    var ref = converter.ref;
+    return ref.channelsOut * ffi.ma_get_bytes_per_sample(ref.formatOut);
+  }
+
+  int get inFrameSize {
+    var ref = converter.ref;
+    return ref.channelsIn * ffi.ma_get_bytes_per_sample(ref.formatIn);
   }
 
   void dispose() {

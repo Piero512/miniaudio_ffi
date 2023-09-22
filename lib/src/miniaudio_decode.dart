@@ -4,6 +4,7 @@ import 'package:ffi/ffi.dart';
 import 'package:miniaudio_ffi/src/utils.dart';
 
 import 'miniaudio_bindings.dart';
+import 'utils.dart' as ma;
 
 typedef ReadFramesReturnRecord = ({int errCode, int framesActuallyRead});
 
@@ -121,26 +122,14 @@ class MiniAudioDecoder implements Finalizable {
         decoder,
         positionPtr,
       );
-      if (result == ma_result.MA_SUCCESS) {
-        return positionPtr.value;
-      } else {
-        throw ArgumentError(
-          ffi.ma_result_description(result).cast<Utf8>().toDartString(),
-          'decoder',
-        );
-      }
+      ma.throwIfNonSuccess(result, ffi);
+      return positionPtr.value;
     });
   }
 
   set positionInPCMFrames(int value) {
     final res = ffi.ma_decoder_seek_to_pcm_frame(decoder, value);
-    if (res != ma_result.MA_SUCCESS) {
-      throw ArgumentError.value(
-        value,
-        'positionInPCMFrames',
-        ffi.ma_result_description(res).cast<Utf8>().toDartString(),
-      );
-    }
+    ma.throwIfNonSuccess(res, ffi);
   }
 
   int get lengthInPCMFrames {
@@ -150,14 +139,8 @@ class MiniAudioDecoder implements Finalizable {
         decoder,
         lengthPtr,
       );
-      if (result == ma_result.MA_SUCCESS) {
-        return lengthPtr.value;
-      } else {
-        throw ArgumentError(
-          ffi.ma_result_description(result).cast<Utf8>().toDartString(),
-          'decoder',
-        );
-      }
+      ma.throwIfNonSuccess(result, ffi);
+      return lengthPtr.value;
     });
     return _cachedLength!;
   }
